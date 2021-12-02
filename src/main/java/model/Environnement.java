@@ -1,4 +1,4 @@
-package com.example.tp_taquin.model;
+package model;
 
 import javafx.geometry.Point2D;
 
@@ -16,6 +16,13 @@ public class Environnement {
         finalMap = new Case[n][n];
         int x,y;
         boolean found;
+
+        for (int i = 0; i<n;i++){
+            for (int j=0; j<n; j++){
+                map[i][j] = new Case();
+                finalMap[i][j] = new Case();
+            }
+        }
 
         // Conception du schéma initiale
         for(Agent a : agents){
@@ -70,6 +77,14 @@ public class Environnement {
     public boolean isOccupied(Agent.Direction d) {
         // TODO()
         return false;
+    }
+
+    public Case[][] getMap() {
+        return map;
+    }
+
+    public Case[][] getFinalMap() {
+        return finalMap;
     }
 
 }

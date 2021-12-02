@@ -1,4 +1,4 @@
-package com.example.tp_taquin.model;
+package model;
 
 public class Case {
     private Agent occupation;
@@ -12,8 +12,7 @@ public class Case {
     }
 
     public boolean isOccupied() {
-        if (occupation == null) return false;
-        return true;
+        return occupation != null;
     }
 
     public Agent getOccupation() {

@@ -1,6 +1,5 @@
-package com.example.tp_taquin.model;
+package model;
 
-import javafx.beans.InvalidationListener;
 import javafx.geometry.Point2D;
 
 import java.util.*;
@@ -11,6 +10,7 @@ public class Agent extends Thread {
     private Environnement e;
     private int finalX, finalY;
     private Direction d;
+    private String name;
 
     public enum Direction{
         TOP,
@@ -19,6 +19,9 @@ public class Agent extends Thread {
         LEFT
     }
 
+    public Agent(String name){
+        this.name = name;
+    }
     @Override
     public void run() {
 
