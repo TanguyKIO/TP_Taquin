@@ -91,7 +91,7 @@ public class TaquinView extends Application {
 
 
         // En-dessous de la barre de menu et de la toolbar, on ajoute un contenant
-        // pour pouvoir mettre la grille et le bandeau de début et fin de partie
+        // pour pouvoir mettre la grille
         StackPane contenantCentre = new StackPane ();
         root.setCenter(contenantCentre);
 
@@ -105,6 +105,19 @@ public class TaquinView extends Application {
         lblTitle.setFont(Font.font("Arial Black", FontWeight.NORMAL, 32));
         lblTitle.setTextFill(Color.FIREBRICK);
         grille.add(lblTitle, 0, 0, 2, 1);
+
+        Label lblSolutionCourante = new Label("Solution en cours");
+        lblSolutionCourante.setFont(Font.font("Arial Black", FontWeight.NORMAL, 15));
+        lblSolutionCourante.setTextFill(Color.FIREBRICK);
+        grille.add(lblSolutionCourante, 0, 1, 1, 1);
+        GridPane.setHalignment(lblSolutionCourante, HPos.CENTER);
+
+        Label lblSolutionFinale = new Label("Solution finale");
+        lblSolutionFinale.setFont(Font.font("Arial Black", FontWeight.NORMAL, 15));
+        lblSolutionFinale.setTextFill(Color.FIREBRICK);
+        grille.add(lblSolutionFinale, 1, 1, 1, 1);
+        GridPane.setHalignment(lblSolutionFinale, HPos.CENTER);
+
         GridPane.setHalignment(lblTitle, HPos.CENTER);
         GridPane.setMargin(lblTitle, new Insets(0, 0, 10,0));
     }
@@ -146,7 +159,12 @@ public class TaquinView extends Application {
             for (int j=1; j<yLength+1; j++){
                 image = new ImageView();
                 if (map[i-1][j-1].isOccupied()) {
-                    image.setImage(new Image("file:res/1 (1).jpg"));
+                    if (finalMap[i-1][j-1].isOccupied() && map[i-1][j-1].getOccupation().getNom() == finalMap[i-1][j-1].getOccupation().getNom()){
+                        image.setImage(new Image("file:res/" + map[i-1][j-1].getOccupation().getNom() + "_win.jpg"));
+                    }
+                    else {
+                        image.setImage(new Image("file:res/" + map[i - 1][j - 1].getOccupation().getNom() + ".jpg"));
+                    }
                 }
                 else{
                     image.setImage(new Image("file:res/blanc.jpg"));
@@ -187,7 +205,7 @@ public class TaquinView extends Application {
             for (int j=1; j<yLength+1; j++){
                 image = new ImageView();
                 if (finalMap[i-1][j-1].isOccupied()) {
-                    image.setImage(new Image("file:res/1 (1).jpg"));
+                    image.setImage(new Image("file:res/" + finalMap[i-1][j-1].getOccupation().getNom() + ".jpg"));
                 }
                 else{
                     image.setImage(new Image("file:res/blanc.jpg"));

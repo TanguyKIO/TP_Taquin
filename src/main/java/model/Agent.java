@@ -55,4 +55,8 @@ public class Agent extends Thread {
             // communicate pour demander à l'agent de bouger
         }
     }
+
+    public String getNom() {
+        return name;
+    }
 }
