@@ -1,6 +1,7 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Application {
     public Environnement getEnv() {
@@ -11,17 +12,22 @@ public class Application {
 
     public Application(int nbLignes, int nbColonnes, int nbAgents){
         initialiserPartie(nbLignes, nbColonnes, nbAgents);
-
     }
-    public void initialiserPartie(int nbLignes, int nbColonnes, int nbAgents){
+
+    public void initialiserPartie(int nbLignes, int nbColonnes, int nbAgents) {
         ArrayList<Agent> agents = new ArrayList<>();
-        agents.add(new Agent("10"));
-        agents.add(new Agent("2"));
-        agents.add(new Agent("15"));
-        agents.add(new Agent("7"));
-        agents.add(new Agent("5"));
-        env = new Environnement(5, agents);
+        ArrayList<Integer> agentNames = new ArrayList<>();
+        Random rand = new Random();
+        int random_number;
+        for (int i = 0; i < nbAgents; i++) {
+            while (true) {
+                random_number = 1 + rand.nextInt(nbAgents);
+                if (!agentNames.contains(random_number)) {
+                    break;
+                }
+            }
+            agents.add(new Agent(random_number));
+            env = new Environnement(nbLignes, nbColonnes, agents);
+        }
     }
-
-
 }

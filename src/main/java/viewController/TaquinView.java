@@ -2,9 +2,6 @@ package viewController;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,13 +14,11 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import model.Case;
-
+import model.Agent;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -236,8 +231,8 @@ public class TaquinView extends Application {
     }
 
     private void createSmallGrid(){
-        Case [][] map = app.getEnv().getMap();
-        Case [][] finalMap = app.getEnv().getFinalMap();
+        Agent [][] map = app.getEnv().getMap();
+        int [][] finalMap = app.getEnv().getFinalMap();
         int xLength = map.length;
         int yLength = map[0].length;
 
@@ -267,12 +262,12 @@ public class TaquinView extends Application {
             subGrid.add(image, 0, i);
             for (int j=1; j<yLength+1; j++){
                 image = new ImageView();
-                if (map[i-1][j-1].isOccupied()) {
-                    if (finalMap[i-1][j-1].isOccupied() && map[i-1][j-1].getOccupation().getNom() == finalMap[i-1][j-1].getOccupation().getNom()){
-                        image.setImage(new Image("file:res/images/" + map[i-1][j-1].getOccupation().getNom() + "_win.jpg"));
+                if (map[i-1][j-1] != null) {
+                    if (finalMap[i-1][j-1] != 0 && map[i-1][j-1].getNom() == finalMap[i-1][j-1]){
+                        image.setImage(new Image("file:res/images/" + map[i-1][j-1].getNom() + "_win.jpg"));
                     }
                     else {
-                        image.setImage(new Image("file:res/images/" + map[i - 1][j - 1].getOccupation().getNom() + ".jpg"));
+                        image.setImage(new Image("file:res/images/" + map[i - 1][j - 1].getNom() + ".jpg"));
                     }
                 }
                 else{
@@ -315,8 +310,8 @@ public class TaquinView extends Application {
             subGrid2.add(image, 0, i);
             for (int j=1; j<yLength+1; j++){
                 image = new ImageView();
-                if (finalMap[i-1][j-1].isOccupied()) {
-                    image.setImage(new Image("file:res/images/" + finalMap[i-1][j-1].getOccupation().getNom() + ".jpg"));
+                if (finalMap[i-1][j-1] != 0) {
+                    image.setImage(new Image("file:res/images/" + finalMap[i-1][j-1] + ".jpg"));
                 }
                 else{
                     image.setImage(new Image("file:res/images/blanc.jpg"));
@@ -339,8 +334,8 @@ public class TaquinView extends Application {
     }
 
     private void createBigGrid(){
-        Case [][] map = app.getEnv().getMap();
-        Case [][] finalMap = app.getEnv().getFinalMap();
+        Agent [][] map = app.getEnv().getMap();
+        int [][] finalMap = app.getEnv().getFinalMap();
         int xLength = map.length;
         int yLength = map[0].length;
 
@@ -370,12 +365,12 @@ public class TaquinView extends Application {
             subGrid.add(image, 0, i);
             for (int j=1; j<yLength+1; j++){
                 image = new ImageView();
-                if (map[i-1][j-1].isOccupied()) {
-                    if (finalMap[i-1][j-1].isOccupied() && map[i-1][j-1].getOccupation().getNom() == finalMap[i-1][j-1].getOccupation().getNom()){
-                        image.setImage(new Image("file:res/images/" + map[i-1][j-1].getOccupation().getNom() + "_win.jpg"));
+                if (map[i-1][j-1] != null) {
+                    if (finalMap[i-1][j-1] != 0 && map[i-1][j-1].getNom() == finalMap[i-1][j-1]){
+                        image.setImage(new Image("file:res/images/" + map[i-1][j-1].getNom() + "_win.jpg"));
                     }
                     else {
-                        image.setImage(new Image("file:res/images/" + map[i - 1][j - 1].getOccupation().getNom() + ".jpg"));
+                        image.setImage(new Image("file:res/images/" + map[i - 1][j - 1].getNom() + ".jpg"));
                     }
                 }
                 else{
@@ -418,8 +413,8 @@ public class TaquinView extends Application {
             subGrid2.add(image, 0, i);
             for (int j=1; j<yLength+1; j++){
                 image = new ImageView();
-                if (finalMap[i-1][j-1].isOccupied()) {
-                    image.setImage(new Image("file:res/images/" + finalMap[i-1][j-1].getOccupation().getNom() + ".jpg"));
+                if (finalMap[i-1][j-1] != 0) {
+                    image.setImage(new Image("file:res/images/" + finalMap[i-1][j-1] + ".jpg"));
                 }
                 else{
                     image.setImage(new Image("file:res/images/blanc.jpg"));

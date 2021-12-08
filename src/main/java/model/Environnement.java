@@ -1,52 +1,31 @@
 package model;
 
-import javafx.geometry.Point2D;
-
 import java.util.ArrayList;
 import java.util.Random;
 
 public class Environnement {
     private ArrayList<Agent> agents;
-    private Case[][] map;
-    private Case[][] finalMap;
+    private Agent [][] map;
+    private int [][] finalMap;
 
-    public Environnement(int n, ArrayList<Agent> agents) {
+    public Environnement(int nbLignes, int nbColonnes, ArrayList<Agent> agents) {
+        Random rand = new Random();
         this.agents = agents;
-        map = new Case[n][n];
-        finalMap = new Case[n][n];
+        map = new Agent[nbLignes][nbColonnes];
+        finalMap = new int[nbLignes][nbColonnes];
         int x,y;
-        boolean found;
-
-        for (int i = 0; i<n;i++){
-            for (int j=0; j<n; j++){
-                map[i][j] = new Case();
-                finalMap[i][j] = new Case();
-            }
-        }
 
         // Conception du schéma initiale
-        for(Agent a : agents){
-            found = false;
-            while(true){
-                x = new Random().nextInt(map.length);
-                y = new Random().nextInt(map[0].length);
-                if(!map[x][y].isOccupied()){
-                    map[x][y].setAgent(a);
+        for(Agent agent : agents) {
+            while (true) {
+                x = rand.nextInt(nbLignes);
+                y = rand.nextInt(nbColonnes);
+                if (map[x][y] != null) {
+                    map[x][y] = agent;
                     break;
                 }
-            }
-        }
-
-        // Conception du schéma finale
-        for(Agent a : agents){
-            found = false;
-            while(true){
-                x = new Random().nextInt(finalMap.length);
-                y = new Random().nextInt(finalMap[0].length);
-                if(!finalMap[x][y].isOccupied()){
-                    finalMap[x][y].setAgent(a);
-                    break;
-                }
+                int agentName = agent.getNom();
+                finalMap[agentName / nbColonnes][agentName % nbColonnes] = agentName;
             }
         }
     }
@@ -58,32 +37,43 @@ public class Environnement {
     }
 
     public void verify(){
-        if (map == finalMap) {
+        if (isResolved()) {
             for(Agent a : agents) {
                 a.interrupt();
             }
         }
     }
 
-    public Point2D getXY(Agent a){
-        for(int i = 0; i<map.length;i++){
-            for(int j = 0; j<map[i].length;j++){
-                if(a.equals(map[i][j].getOccupation())) return new Point2D(i,j);
+    public boolean isResolved() {
+        for (Agent agent : agents) {
+            if (agent.getCurrentX() != agent.getFinalX()) {
+                return false;
             }
         }
-        return null;
+        return true;
     }
 
-    public boolean isOccupied(Agent.Direction d) {
-        // TODO()
+    public void move(Agent a, Direction d) {
+        map[a.getCurrentX()][a.getCurrentY()] = null;
+        switch (d){
+            case TOP -> map[a.getCurrentX()-1][a.getCurrentY()] = a;
+            case BOTTOM -> map[a.getCurrentX()+1][a.getCurrentY()] = a;
+            case LEFT -> map[a.getCurrentX()][a.getCurrentY()-1] = a;
+            case RIGHT -> map[a.getCurrentX()][a.getCurrentY()+1] = a;
+        }
+    }
+
+
+    public boolean isOccupied(Direction d) {
+
         return false;
     }
 
-    public Case[][] getMap() {
+    public Agent[][] getMap() {
         return map;
     }
 
-    public Case[][] getFinalMap() {
+    public int[][] getFinalMap() {
         return finalMap;
     }
 
