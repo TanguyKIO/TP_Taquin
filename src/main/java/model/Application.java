@@ -11,18 +11,15 @@ public class Application {
     private Environnement env;
 
     public Application(int nbLignes, int nbColonnes, int nbAgents){
-        initialiserPartie(nbLignes, nbColonnes, nbAgents);
-    }
-
-    public void initialiserPartie(int nbLignes, int nbColonnes, int nbAgents) {
         ArrayList<Agent> agents = new ArrayList<>();
         ArrayList<Integer> agentNames = new ArrayList<>();
         Random rand = new Random();
         int random_number;
         for (int i = 0; i < nbAgents; i++) {
             while (true) {
-                random_number = 1 + rand.nextInt(nbAgents);
+                random_number = 1 + rand.nextInt(nbLignes*nbColonnes-1);
                 if (!agentNames.contains(random_number)) {
+                    agentNames.add(random_number);
                     break;
                 }
             }
@@ -30,4 +27,5 @@ public class Application {
         }
         env = new Environnement(nbLignes, nbColonnes, agents);
     }
+
 }

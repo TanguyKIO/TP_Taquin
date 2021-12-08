@@ -22,9 +22,12 @@ import model.Agent;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Observer;
+import java.util.Observable;
 
 
-public class TaquinView extends Application {
+
+public class TaquinView extends Application implements Observer {
     private BorderPane root; // pour pouvoir accéder facilement aux différents composants graphiques de l'interface
     private GridPane grille;
     private HashMap <String, Image> tabImages; // ensemble des images du jeu
@@ -122,7 +125,6 @@ public class TaquinView extends Application {
     }
 
     private void creerSceneJeu(){
-        app = new model.Application(nbLignes, nbColonnes, nbAgents);
         Stage stage = new Stage();
         currentStage = stage;
         // On crée un BorderPane pour placer les composants principaux
@@ -131,7 +133,7 @@ public class TaquinView extends Application {
         root.setBackground(new Background(new BackgroundFill(Color.GREY, CornerRadii.EMPTY, Insets.EMPTY)));
 
         ajouterComposants();
-        afficherGrille();
+        initialiserPartie();
 
         Scene scene2 = new Scene(root);
         stage.setMaxHeight(1000);
@@ -228,39 +230,44 @@ public class TaquinView extends Application {
         else
             createBigGrid();
 
+        for (Agent agent:app.getEnv().getAgents()){
+            agent.addObserver(this);
+        }
+
     }
 
     private void createSmallGrid(){
-        Agent [][] map = app.getEnv().getMap();
-        int [][] finalMap = app.getEnv().getFinalMap();
-        int xLength = map.length;
-        int yLength = map[0].length;
-
+        createSubGridCurrent();
+        createSubGridSolution();
         //--- GridPane properties
         grille.setAlignment(Pos.CENTER);
         grille.setPadding(new Insets(20));
         grille.setHgap(30);
         grille.setVgap(10);
+    }
 
+    private void createSubGridCurrent(){
+        Agent [][] map = app.getEnv().getMap();
+        int [][] finalMap = app.getEnv().getFinalMap();
         GridPane subGrid = (GridPane) grille.getChildren().get(3);
         ImageView image = new ImageView();
         image.setImage(new Image("file:res/images/contour_carre.jpg"));
         subGrid.add(image, 0, 0);
         image = new ImageView();
         image.setImage(new Image("file:res/images/contour_carre.jpg"));
-        subGrid.add(image, xLength+1, 0);
+        subGrid.add(image, nbColonnes+1, 0);
         image = new ImageView();
         image.setImage(new Image("file:res/images/contour_carre.jpg"));
-        subGrid.add(image, 0, yLength+1);
+        subGrid.add(image, 0, nbLignes+1);
         image = new ImageView();
         image.setImage(new Image("file:res/images/contour_carre.jpg"));
-        subGrid.add(image, xLength+1, yLength+1);
+        subGrid.add(image, nbColonnes+1, nbLignes+1);
 
-        for (int i =1; i<xLength+1; i++){
+        for (int i =1; i<nbLignes+1; i++){
             image = new ImageView();
             image.setImage(new Image("file:res/images/contour_vertical.jpg"));
             subGrid.add(image, 0, i);
-            for (int j=1; j<yLength+1; j++){
+            for (int j=1; j<nbColonnes+1; j++){
                 image = new ImageView();
                 if (map[i-1][j-1] != null) {
                     if (finalMap[i-1][j-1] != 0 && map[i-1][j-1].getNom() == finalMap[i-1][j-1]){
@@ -273,42 +280,72 @@ public class TaquinView extends Application {
                 else{
                     image.setImage(new Image("file:res/images/blanc.jpg"));
                 }
-                subGrid.add(image, i, j);
+                subGrid.add(image, j, i);
             }
             image = new ImageView();
             image.setImage(new Image("file:res/images/contour_vertical.jpg"));
-            subGrid.add(image, xLength+1, i);
+            subGrid.add(image, nbColonnes+1, i);
         }
 
-        for (int j=1; j < yLength+1; j++){
+        for (int j=1; j < nbColonnes+1; j++){
             image = new ImageView();
             image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
             subGrid.add(image, j, 0);
             image = new ImageView();
             image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
-            subGrid.add(image, j, yLength+1);
+            subGrid.add(image, j, nbLignes+1);
         }
+    }
 
-        image = new ImageView();
+    private void updateSubGridCurrent(){
+        int iter = 4;
+        ImageView image;
+        Agent [][] map = app.getEnv().getMap();
+        int [][] finalMap = app.getEnv().getFinalMap();
+        GridPane subGrid = (GridPane) grille.getChildren().get(3);
+        for (int i =1; i<nbLignes+1; i++){
+            iter += 1;
+            for (int j=1; j<nbColonnes+1; j++){
+                image = (ImageView)subGrid.getChildren().get(iter);
+                if (map[i-1][j-1] != null) {
+                    if (finalMap[i-1][j-1] != 0 && map[i-1][j-1].getNom() == finalMap[i-1][j-1]){
+                        image.setImage(new Image("file:res/images/" + map[i-1][j-1].getNom() + "_win.jpg"));
+                    }
+                    else {
+                        image.setImage(new Image("file:res/images/" + map[i - 1][j - 1].getNom() + ".jpg"));
+                    }
+                }
+                else{
+                    image.setImage(new Image("file:res/images/blanc.jpg"));
+                }
+                iter += 1;
+            }
+            iter += 1;
+        }
+    }
+
+    private void createSubGridSolution(){
+        int [][] finalMap = app.getEnv().getFinalMap();
+        ImageView image = new ImageView();
         image.setImage(new Image("file:res/images/contour_carre.jpg"));
 
         GridPane subGrid2 = (GridPane) grille.getChildren().get(4);
         subGrid2.add(image, 0, 0);
         image = new ImageView();
         image.setImage(new Image("file:res/images/contour_carre.jpg"));
-        subGrid2.add(image, xLength+1, 0);
+        subGrid2.add(image, nbColonnes+1, 0);
         image = new ImageView();
         image.setImage(new Image("file:res/images/contour_carre.jpg"));
-        subGrid2.add(image, 0, yLength+1);
+        subGrid2.add(image, 0, nbLignes+1);
         image = new ImageView();
         image.setImage(new Image("file:res/images/contour_carre.jpg"));
-        subGrid2.add(image, xLength+1, yLength+1);
+        subGrid2.add(image, nbColonnes+1, nbLignes+1);
 
-        for (int i =1; i<xLength+1; i++){
+        for (int i =1; i<nbLignes+1; i++){
             image = new ImageView();
             image.setImage(new Image("file:res/images/contour_vertical.jpg"));
             subGrid2.add(image, 0, i);
-            for (int j=1; j<yLength+1; j++){
+            for (int j=1; j<nbColonnes+1; j++){
                 image = new ImageView();
                 if (finalMap[i-1][j-1] != 0) {
                     image.setImage(new Image("file:res/images/" + finalMap[i-1][j-1] + ".jpg"));
@@ -316,20 +353,20 @@ public class TaquinView extends Application {
                 else{
                     image.setImage(new Image("file:res/images/blanc.jpg"));
                 }
-                subGrid2.add(image, i, j);
+                subGrid2.add(image, j, i);
             }
             image = new ImageView();
             image.setImage(new Image("file:res/images/contour_vertical.jpg"));
-            subGrid2.add(image, xLength+1, i);
+            subGrid2.add(image, nbColonnes+1, i);
         }
 
-        for (int j=1; j < yLength+1; j++){
+        for (int j=1; j < nbColonnes+1; j++){
             image = new ImageView();
             image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
             subGrid2.add(image, j, 0);
             image = new ImageView();
             image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
-            subGrid2.add(image, j, yLength+1);
+            subGrid2.add(image, j, nbLignes+1);
         }
     }
 
@@ -436,13 +473,18 @@ public class TaquinView extends Application {
         }
     }
 
-
     private void initialiserPartie () {
-        app.initialiserPartie (nbLignes, nbColonnes, nbAgents);
+        app = new model.Application(nbLignes, nbColonnes, nbAgents);
         afficherGrille (); // On réinitialise la grille
+        app.getEnv().start();
     }
 
     public static void main(String[] args) {
         launch();
+    }
+
+    @Override
+    public synchronized void update(Observable o, Object arg) {
+        updateSubGridCurrent();
     }
 }

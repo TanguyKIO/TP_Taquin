@@ -4,29 +4,36 @@ import javafx.geometry.Point2D;
 
 import java.util.*;
 
-public class Agent extends Thread {
+public class Agent extends Observable implements Runnable{
 
-    private HashMap<Agent, LinkedList<String>> sharedQueue;
+    public void setE(Environnement e) {
+        this.e = e;
+    }
+
     private Environnement e;
     private int finalX, finalY;
     private int currentX, currentY;
-    private Direction d;
     private int name;
+    private boolean interupt;
 
     public Agent(int name) {
         this.name = name;
     }
 
     @Override
-    public void run() {
-
-        // Communiquer
-        // Décider
-        // Appliquer
-        // Raisonner
-        LinkedList<String> messages = sharedQueue.get(this);
-        decide();
-
+    public synchronized void run() {
+        while(!interupt) {
+            synchronized(this) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+                decide();
+                setChanged();
+                notifyObservers();
+            }
+        }
     }
 
     public int getCurrentX() {
@@ -54,50 +61,53 @@ public class Agent extends Thread {
             else directions.add(Direction.BOTTOM);
             if (diffY < 0) {
                 directions.add(Direction.LEFT);
-                if (directions.contains(Direction.TOP)) {
+                /*if (directions.contains(Direction.TOP)) {
                     directions.add(Direction.BOTTOM);
                 } else {
                     directions.add(Direction.TOP);
                 }
-                directions.add(Direction.RIGHT);
+                directions.add(Direction.RIGHT);*/
             } else {
                 directions.add(Direction.RIGHT);
-                if (directions.contains(Direction.TOP)) {
+                /*if (directions.contains(Direction.TOP)) {
                     directions.add(Direction.BOTTOM);
                 } else {
                     directions.add(Direction.TOP);
                 }
-                directions.add(Direction.LEFT);
+                directions.add(Direction.LEFT);*/
             }
         } else {
             if (diffY < 0) directions.add(Direction.LEFT);
             else directions.add(Direction.RIGHT);
             if (diffX < 0) {
                 directions.add(Direction.TOP);
-                if (directions.contains(Direction.LEFT)) {
+                /*if (directions.contains(Direction.LEFT)) {
                     directions.add(Direction.RIGHT);
                 } else {
                     directions.add(Direction.LEFT);
                 }
-                directions.add(Direction.BOTTOM);
+                directions.add(Direction.BOTTOM);*/
             } else {
                 directions.add(Direction.BOTTOM);
-                if (directions.contains(Direction.LEFT)) {
+                /*if (directions.contains(Direction.LEFT)) {
                     directions.add(Direction.RIGHT);
                 } else {
                     directions.add(Direction.LEFT);
                 }
-                directions.add(Direction.TOP);
+                directions.add(Direction.TOP);*/
             }
         }
-
         return directions;
     }
 
     public void decide() {
         LinkedList<Direction> availableDirections = chemin();
         for(Direction d : availableDirections){
-            if(!e.isOccupied(d));
+            if(!e.isOccupied(currentX, currentY, d)) {
+                e.move(this, d);
+                System.out.println(name+" : "+ currentX+" "+ currentY);
+                break;
+            }
         }
     }
 
@@ -120,8 +130,15 @@ public class Agent extends Thread {
     public int getNom() {
         return name;
     }
-}
 
+    public boolean isInterupt() {
+        return interupt;
+    }
+
+    public void setInterupt(boolean interupt) {
+        this.interupt = interupt;
+    }
+}
 
 enum Direction {
     TOP,
