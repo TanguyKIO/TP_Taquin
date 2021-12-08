@@ -9,22 +9,16 @@ public class Application {
 
     private Environnement env;
 
-    public Application(){
-        ArrayList<Agent> agents = new ArrayList<Agent>();
-        agents.add(new Agent("10"));
-        agents.add(new Agent("2"));
-        agents.add(new Agent("3"));
-        agents.add(new Agent("8"));
-        agents.add(new Agent("5"));
-        env = new Environnement(5, agents);
+    public Application(int nbLignes, int nbColonnes, int nbAgents){
+        initialiserPartie(nbLignes, nbColonnes, nbAgents);
 
     }
-    public void initialiserPartie(){
-        ArrayList<Agent> agents = new ArrayList<Agent>();
-        agents.add(new Agent("1"));
+    public void initialiserPartie(int nbLignes, int nbColonnes, int nbAgents){
+        ArrayList<Agent> agents = new ArrayList<>();
+        agents.add(new Agent("10"));
         agents.add(new Agent("2"));
-        agents.add(new Agent("3"));
-        agents.add(new Agent("4"));
+        agents.add(new Agent("15"));
+        agents.add(new Agent("7"));
         agents.add(new Agent("5"));
         env = new Environnement(5, agents);
     }
