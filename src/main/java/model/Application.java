@@ -27,7 +27,7 @@ public class Application {
                 }
             }
             agents.add(new Agent(random_number));
-            env = new Environnement(nbLignes, nbColonnes, agents);
         }
+        env = new Environnement(nbLignes, nbColonnes, agents);
     }
 }
