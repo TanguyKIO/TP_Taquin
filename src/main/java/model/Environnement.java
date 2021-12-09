@@ -30,6 +30,8 @@ public class Environnement {
                 }
             }
             int agentName = agent.getNom();
+            agent.setFinalX(agentName/ nbColonnes);
+            agent.setFinalY(agentName % nbColonnes);
             finalMap[agentName / nbColonnes][agentName % nbColonnes] = agentName;
         }
     }
@@ -91,18 +93,22 @@ public class Environnement {
     }
 
 
-    public boolean isOccupied(int x, int y, Direction d) {
+    public boolean isMovementPossible(int x, int y, Direction d) {
         switch (d) {
             case TOP -> {
+                if(x==0) return false;
                 return (x-1 >= 0 && map[x- 1][y] != null);
             }
             case BOTTOM -> {
+                if(x== map.length-1) return false;
                 return (x+1 < map.length && map[x+ 1][y]!= null);
             }
             case LEFT -> {
+                if(y== 0) return false;
                 return (y-1 >=0 && map[x][y - 1] != null);
             }
             case RIGHT -> {
+                if(y == map[0].length-1) return false;
                 return (y+1 < map[0].length && map[x][y + 1] != null);
             }
         }

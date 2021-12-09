@@ -25,7 +25,7 @@ public class Agent extends Observable implements Runnable{
         while(!interupt) {
             synchronized(this) {
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(500);
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
@@ -61,52 +61,53 @@ public class Agent extends Observable implements Runnable{
             else directions.add(Direction.BOTTOM);
             if (diffY < 0) {
                 directions.add(Direction.LEFT);
-                /*if (directions.contains(Direction.TOP)) {
+                if (directions.contains(Direction.TOP)) {
                     directions.add(Direction.BOTTOM);
                 } else {
                     directions.add(Direction.TOP);
                 }
-                directions.add(Direction.RIGHT);*/
+                directions.add(Direction.RIGHT);
             } else {
                 directions.add(Direction.RIGHT);
-                /*if (directions.contains(Direction.TOP)) {
+                if (directions.contains(Direction.TOP)) {
                     directions.add(Direction.BOTTOM);
                 } else {
                     directions.add(Direction.TOP);
                 }
-                directions.add(Direction.LEFT);*/
+                directions.add(Direction.LEFT);
             }
         } else {
             if (diffY < 0) directions.add(Direction.LEFT);
             else directions.add(Direction.RIGHT);
             if (diffX < 0) {
                 directions.add(Direction.TOP);
-                /*if (directions.contains(Direction.LEFT)) {
+                if (directions.contains(Direction.LEFT)) {
                     directions.add(Direction.RIGHT);
                 } else {
                     directions.add(Direction.LEFT);
                 }
-                directions.add(Direction.BOTTOM);*/
+                directions.add(Direction.BOTTOM);
             } else {
                 directions.add(Direction.BOTTOM);
-                /*if (directions.contains(Direction.LEFT)) {
+                if (directions.contains(Direction.LEFT)) {
                     directions.add(Direction.RIGHT);
                 } else {
                     directions.add(Direction.LEFT);
                 }
-                directions.add(Direction.TOP);*/
+                directions.add(Direction.TOP);
             }
         }
         return directions;
     }
 
     public void decide() {
-        LinkedList<Direction> availableDirections = chemin();
-        for(Direction d : availableDirections){
-            if(!e.isOccupied(currentX, currentY, d)) {
-                e.move(this, d);
-                System.out.println(name+" : "+ currentX+" "+ currentY);
-                break;
+        if(finalX != currentX || finalY != currentY) {
+            LinkedList<Direction> availableDirections = chemin();
+            for(Direction d : availableDirections){
+                if(!e.isMovementPossible(currentX, currentY, d)) {
+                    e.move(this, d);
+                    break;
+                }
             }
         }
     }
