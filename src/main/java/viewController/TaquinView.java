@@ -135,6 +135,7 @@ public class TaquinView extends Application implements Observer {
         ajouterComposants();
         initialiserPartie();
 
+
         Scene scene2 = new Scene(root);
         stage.setMaxHeight(1000);
         stage.setMaxWidth(1000);
@@ -169,7 +170,7 @@ public class TaquinView extends Application implements Observer {
         m_quitter.setOnAction (actionEvent -> Platform.exit ()); //lambda function
         m_quitter.setAccelerator (new KeyCodeCombination (KeyCode.X, KeyCombination.CONTROL_DOWN));
         // raccourci-clavier
-        m_partie.setOnAction (actionEvent -> initialiserPartie()); //lambda function
+        m_partie.setOnAction (actionEvent -> reinitialiserPartie()); //lambda function
         m_partie.setAccelerator (new KeyCodeCombination (KeyCode.N, KeyCombination.CONTROL_DOWN));
         // raccourci-clavier
         m_parametres.setOnAction (actionEvent -> {
@@ -229,10 +230,6 @@ public class TaquinView extends Application implements Observer {
             createSmallGrid();
         else
             createBigGrid();
-
-        for (Agent agent:app.getEnv().getAgents()){
-            agent.addObserver(this);
-        }
 
     }
 
@@ -370,6 +367,27 @@ public class TaquinView extends Application implements Observer {
         }
     }
 
+    private void updateSubGridSolution(){
+        int iter = 4;
+        ImageView image;
+        int [][] finalMap = app.getEnv().getFinalMap();
+        GridPane subGrid = (GridPane) grille.getChildren().get(4);
+        for (int i =1; i<nbLignes+1; i++){
+            iter += 1;
+            for (int j=1; j<nbColonnes+1; j++){
+                image = (ImageView)subGrid.getChildren().get(iter);
+                if (finalMap[i-1][j-1] != 0) {
+                    image.setImage(new Image("file:res/images/" + finalMap[i-1][j-1] + ".jpg"));
+                }
+                else{
+                    image.setImage(new Image("file:res/images/blanc.jpg"));
+                }
+                iter += 1;
+            }
+            iter += 1;
+        }
+    }
+
     private void createBigGrid(){
         Agent [][] map = app.getEnv().getMap();
         int [][] finalMap = app.getEnv().getFinalMap();
@@ -475,8 +493,16 @@ public class TaquinView extends Application implements Observer {
 
     private void initialiserPartie () {
         app = new model.Application(nbLignes, nbColonnes, nbAgents);
+        for (Agent agent:app.getEnv().getAgents()){
+            agent.addObserver(this);
+        }
         afficherGrille (); // On réinitialise la grille
         app.getEnv().start();
+    }
+
+    private void reinitialiserPartie () {
+        app.getEnv().reinitialiser();
+        updateSubGridSolution();
     }
 
     public static void main(String[] args) {

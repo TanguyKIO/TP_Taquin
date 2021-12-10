@@ -6,11 +6,11 @@ import java.util.*;
 
 public class Agent extends Observable implements Runnable{
 
-    public void setE(Environnement e) {
-        this.e = e;
+    public void setE(Environnement env) {
+        this.env = env;
     }
 
-    private Environnement e;
+    private Environnement env;
     private int finalX, finalY;
     private int currentX, currentY;
     private int name;
@@ -22,16 +22,19 @@ public class Agent extends Observable implements Runnable{
 
     @Override
     public synchronized void run() {
-        while(!interupt) {
+        while(true) {
             synchronized(this) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                if (!interupt) {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                    decide();
+                    setChanged();
+                    notifyObservers();
+                    env.verify();
                 }
-                decide();
-                setChanged();
-                notifyObservers();
             }
         }
     }
@@ -100,12 +103,12 @@ public class Agent extends Observable implements Runnable{
         return directions;
     }
 
-    public void decide() {
+    public synchronized void decide() {
         if(finalX != currentX || finalY != currentY) {
             LinkedList<Direction> availableDirections = chemin();
             for(Direction d : availableDirections){
-                if(!e.isMovementPossible(currentX, currentY, d)) {
-                    e.move(this, d);
+                if(env.isMovementPossible(currentX, currentY, d)) {
+                    env.move(this, d);
                     break;
                 }
             }
@@ -130,6 +133,10 @@ public class Agent extends Observable implements Runnable{
 
     public int getNom() {
         return name;
+    }
+
+    public void setName(int name){
+        this.name = name;
     }
 
     public boolean isInterupt() {
