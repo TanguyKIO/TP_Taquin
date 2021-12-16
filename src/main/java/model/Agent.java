@@ -1,10 +1,8 @@
 package model;
 
-import javafx.geometry.Point2D;
-
 import java.util.*;
 
-public class Agent extends Observable implements Runnable{
+public class Agent extends Observable implements Runnable {
 
     public void setE(Environnement env) {
         this.env = env;
@@ -22,15 +20,15 @@ public class Agent extends Observable implements Runnable{
 
     @Override
     public synchronized void run() {
-        while(true) {
-            synchronized(this) {
+        while (true) {
+            synchronized (this) {
                 if (!interupt) {
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException ex) {
                         ex.printStackTrace();
                     }
-                    decide();
+                    action(false);
                     setChanged();
                     notifyObservers();
                     env.verify();
@@ -55,7 +53,7 @@ public class Agent extends Observable implements Runnable{
         currentY = y;
     }
 
-    public LinkedList<Direction> chemin() {
+    public LinkedList<Direction> path() {
         LinkedList<Direction> directions = new LinkedList<>();
         int diffX = finalX - currentX;
         int diffY = finalY - currentY;
@@ -103,14 +101,20 @@ public class Agent extends Observable implements Runnable{
         return directions;
     }
 
-    public synchronized void decide() {
-        if(finalX != currentX || finalY != currentY) {
-            LinkedList<Direction> availableDirections = chemin();
-            for(Direction d : availableDirections){
-                if(env.isMovementPossible(currentX, currentY, d)) {
+    public void action(boolean forced) {
+        if ((finalX != currentX || finalY != currentY) || forced) {
+            LinkedList<Direction> availableDirections = path();
+            int count = 0;
+            for (Direction d : availableDirections) {
+                Agent blockingAgent = env.whichAgentBlocking(currentX, currentY, d);
+                if (blockingAgent == null && env.movePossible(currentX, currentY, d)) {
                     env.move(this, d);
                     break;
+                } else if (count >= 1 && !forced && blockingAgent != null) {
+                    System.out.println(name + "pushed agent " + blockingAgent.getNom());
+                    blockingAgent.action(true);
                 }
+                count++;
             }
         }
     }
@@ -135,7 +139,7 @@ public class Agent extends Observable implements Runnable{
         return name;
     }
 
-    public void setName(int name){
+    public void setName(int name) {
         this.name = name;
     }
 
