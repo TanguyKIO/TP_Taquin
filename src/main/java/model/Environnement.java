@@ -7,6 +7,7 @@ public class Environnement {
     private ArrayList<Agent> agents;
     private Agent[][] map;
     private int[][] finalMap;
+    private ArrayList<Thread> runningThreads;
 
     public Environnement(int nbLignes, int nbColonnes, ArrayList<Agent> agents) {
         Random rand = new Random();
@@ -32,6 +33,8 @@ public class Environnement {
             int agentName = agent.getNom();
             agent.setFinalX((agentName - 1) / nbColonnes);
             agent.setFinalY((agentName - 1) % nbColonnes);
+            agent.setSleep((agents.size() < 10?2000:agents.size() < 20?3000:4000));
+            agent.setMaxInterations(50);
             finalMap[(agentName - 1) / nbColonnes][(agentName - 1) % nbColonnes] = agentName;
         }
     }
@@ -42,14 +45,16 @@ public class Environnement {
     }
 
     public void start() {
+        runningThreads = new ArrayList<>();
         for (Agent agent : agents) {
             Thread thread = new Thread(agent);
             try {
-                Thread.sleep(500);
+                Thread.sleep((agents.size() < 10?2000:agents.size() < 20?3000:4000)/agents.size());
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
             thread.start();
+            runningThreads.add(thread);
         }
     }
 
@@ -148,6 +153,7 @@ public class Environnement {
 
         // Conception du schéma initiale
         for (Agent agent : agents) {
+            agent.setInterupt(true);
             while (true) {
                 x = rand.nextInt(nbLignes);
                 y = rand.nextInt(nbColonnes);
@@ -170,12 +176,22 @@ public class Environnement {
             agent.setFinalY((random_number - 1) % nbColonnes);
             finalMap[(random_number - 1) / nbColonnes][(random_number - 1) % nbColonnes] = random_number;
         }
+    }
 
+    public void stopAgents(){
+        for (Agent agent : agents) {
+            agent.setInterupt(true);
+        }
+        for (Thread t :runningThreads){
+            t.stop();
+        }
+    }
 
+    public void restart(){
         for (Agent agent : agents) {
             agent.setInterupt(false);
             try {
-                Thread.sleep(500);
+                Thread.sleep((agents.size() < 10?2000:agents.size() < 20?3000:4000)/agents.size());
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }

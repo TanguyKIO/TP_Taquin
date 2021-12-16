@@ -4,6 +4,8 @@ import java.util.*;
 
 public class Agent extends Observable implements Runnable {
 
+    private int sleepTime;
+
     public void setE(Environnement env) {
         this.env = env;
     }
@@ -13,6 +15,8 @@ public class Agent extends Observable implements Runnable {
     private int currentX, currentY;
     private int name;
     private boolean interupt;
+    private int maxInterations;
+    private int nbIterations;
 
     public Agent(int name) {
         this.name = name;
@@ -23,15 +27,19 @@ public class Agent extends Observable implements Runnable {
         while (true) {
             synchronized (this) {
                 if (!interupt) {
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
-                    }
                     action(false);
                     setChanged();
                     notifyObservers();
                     env.verify();
+                    if (nbIterations == maxInterations){
+                        this.setInterupt(true);
+                    }
+                    try {
+                        Thread.sleep(sleepTime);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                    nbIterations += 1;
                 }
             }
         }
@@ -149,6 +157,14 @@ public class Agent extends Observable implements Runnable {
 
     public void setInterupt(boolean interupt) {
         this.interupt = interupt;
+    }
+
+    public void setSleep(int sleepTime) {
+        this.sleepTime = sleepTime;
+    }
+
+    public void setMaxInterations(int maxInterations) {
+        this.maxInterations = maxInterations;
     }
 }
 
