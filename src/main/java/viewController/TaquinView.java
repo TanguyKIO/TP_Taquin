@@ -39,6 +39,7 @@ public class TaquinView extends Application implements Observer {
     private int nbAgents;
     private int nbLignes;
     private int nbColonnes;
+    private int strategie;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
@@ -56,29 +57,39 @@ public class TaquinView extends Application implements Observer {
         scenetitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
         grid.add(scenetitle, 0, 0, 2, 1);
 
-        Label lblNbLignes = new Label("Nombre de lignes (entre 3 et 7) : ");
+        Label lblNbLignes = new Label("Nombre de lignes (entre 3 et 6) : ");
         grid.add(lblNbLignes, 0, 1);
 
         TextField nbLignesTextField = new TextField();
+        nbLignesTextField.setText("4");
         grid.add(nbLignesTextField, 1, 1);
 
-        Label lblNbColonnes = new Label("Nombre de colonnes (entre 3 et 7) : ");
+        Label lblNbColonnes = new Label("Nombre de colonnes (entre 3 et 6) : ");
         grid.add(lblNbColonnes, 0, 2);
 
         TextField nbColonnesTextField = new TextField();
+        nbColonnesTextField.setText("4");
         grid.add(nbColonnesTextField, 1, 2);
 
         Label lblNbAgents = new Label("Nombre d'agents (entre 3 et nombre de cas - 1) :");
         grid.add(lblNbAgents, 0, 3);
 
         TextField nbAgentsTextField = new TextField();
+        nbAgentsTextField.setText("4");
         grid.add(nbAgentsTextField, 1, 3);
+
+        Label lblStrategie = new Label("Stratégie (0: En ligne, 1: En spirale, 2: Pas de contrainte) :");
+        grid.add(lblStrategie, 0, 4);
+
+        TextField strategieTextField = new TextField();
+        strategieTextField.setText("1");
+        grid.add(strategieTextField, 1, 4);
 
         Button btn = new Button("Valider");
         HBox hbBtn = new HBox(10);
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
         hbBtn.getChildren().add(btn);
-        grid.add(hbBtn, 1, 4);
+        grid.add(hbBtn, 1, 5);
 
         Stage primaryStage = new Stage();
         currentStage = primaryStage;
@@ -92,7 +103,7 @@ public class TaquinView extends Application implements Observer {
             boolean parametersOK = true;
             try{
                 nbLignes = Integer.parseInt(nbLignesTextField.getText());
-                if (nbLignes < 3 || nbLignes > 7){
+                if (nbLignes < 3 || nbLignes > 6){
                     throw new Exception();
                 }
             }
@@ -102,7 +113,7 @@ public class TaquinView extends Application implements Observer {
             }
             try{
                 nbColonnes = Integer.parseInt(nbColonnesTextField.getText());
-                if (nbColonnes < 3 || nbColonnes > 7){
+                if (nbColonnes < 3 || nbColonnes > 6){
                     throw new Exception();
                 }
             }
@@ -118,6 +129,16 @@ public class TaquinView extends Application implements Observer {
             }
             catch (Exception error){
                 nbAgentsTextField.setText("");
+                parametersOK = false;
+            }
+            try{
+                strategie = Integer.parseInt(strategieTextField.getText());
+                if (strategie < 0 || strategie > 2){
+                    throw new Exception();
+                }
+            }
+            catch (Exception error){
+                strategieTextField.setText("");
                 parametersOK = false;
             }
             if (parametersOK) {
@@ -490,7 +511,12 @@ public class TaquinView extends Application implements Observer {
                     else {
                         rect.setFill(Color.BISQUE);
                     }
-                    text.setText(String.valueOf(map[i-1][j-1].getNom()));
+                    try {
+                        text.setText(String.valueOf(map[i - 1][j - 1].getNom()));
+                    }
+                    catch (Exception e){
+                        continue;
+                    }
                 }
                 else{
                     rect.setFill(Color.WHITE);
@@ -584,11 +610,8 @@ public class TaquinView extends Application implements Observer {
         }
     }
 
-
-
-
     private void initialiserPartie () {
-        app = new model.Application(nbLignes, nbColonnes, nbAgents);
+        app = new model.Application(nbLignes, nbColonnes, nbAgents, strategie);
         afficherGrille (); // On réinitialise la grille
     }
 
@@ -618,9 +641,14 @@ public class TaquinView extends Application implements Observer {
 
     @Override
     public synchronized void update(Observable o, Object arg) {
-        if (nbLignes * nbColonnes <= 16)
-            updateSubSmallGridCurrent();
-        else
-            updateSubBigGridCurrent();
+        try {
+            if (nbLignes * nbColonnes <= 16)
+                updateSubSmallGridCurrent();
+            else
+                updateSubBigGridCurrent();
+        }
+        catch (Exception ignored){
+        }
+
     }
 }

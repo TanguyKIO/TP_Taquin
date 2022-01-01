@@ -1,6 +1,10 @@
 package model;
 
+import javafx.util.Pair;
+
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Random;
 
 public class Environnement {
@@ -9,8 +13,15 @@ public class Environnement {
     private int[][] finalMap;
     private ArrayList<Thread> runningThreads;
 
-    public Environnement(int nbLignes, int nbColonnes, ArrayList<Agent> agents) {
+    public static HashMap<Agent, LinkedList< Pair<int[], Direction>>> messages;
+    public static int currentLine;
+    public static int strategie;
+
+    public Environnement(int nbLignes, int nbColonnes, ArrayList<Agent> agents, int strategie) {
         Random rand = new Random();
+        messages = new HashMap<>();
+        currentLine = 0;
+        this.strategie = strategie;
         this.agents = agents;
         map = new Agent[nbLignes][nbColonnes];
         finalMap = new int[nbLignes][nbColonnes];
@@ -33,9 +44,10 @@ public class Environnement {
             int agentName = agent.getNom();
             agent.setFinalX((agentName - 1) / nbColonnes);
             agent.setFinalY((agentName - 1) % nbColonnes);
-            agent.setSleep((agents.size() < 10?2000:agents.size() < 20?3000:4000));
-            agent.setMaxInterations(50);
+            agent.setSleep(6000/agents.size());
+            agent.setMaxInterations(10000);
             finalMap[(agentName - 1) / nbColonnes][(agentName - 1) % nbColonnes] = agentName;
+            messages.put(agent, new LinkedList<>());
         }
     }
 
@@ -58,15 +70,17 @@ public class Environnement {
         }
     }
 
-    public void verify() {
+    public synchronized boolean verify() {
         if (isResolved()) {
             for (Agent a : agents) {
                 a.setInterupt(true);
             }
+            return true;
         }
+        return false;
     }
 
-    public boolean isResolved() {
+    public synchronized boolean isResolved() {
         for (Agent agent : agents) {
             if (agent.getCurrentX() != agent.getFinalX() || agent.getCurrentY() != agent.getFinalY()) {
                 return false;
@@ -75,7 +89,101 @@ public class Environnement {
         return true;
     }
 
-    public void move(Agent a, Direction d) {
+    public synchronized boolean testCase(int x, int y, boolean precedent_line){
+        if (map[x][y] == null) {
+            if (finalMap[x][y] != 0) {
+                return false;
+            }
+        }
+        if (!precedent_line) {
+            if (finalMap[x][y] != 0 && map[x][y] != null && map[x][y].getNom() != finalMap[x][y]){
+                return false;
+            }
+            else return map[x][y] == null || map[x][y].getNom() == finalMap[x][y];
+        }
+        return true;
+    }
+
+    public synchronized boolean partResolved(int line){
+        switch (strategie){
+            case 0 -> {
+                return lineResolved(line);
+            }
+            case 1 -> {
+                return contourResolved(line);
+            }
+            case 2 -> {
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    public synchronized boolean contourResolved(int line){
+        for (int i=0; i<map[0].length; i++) {
+            if (!testCase(line, i, false)) {
+                return false;
+            }
+        }
+        for (int i=0; i<map[0].length; i++){
+            if (!testCase(getNbColonnes()-1-line, i, false)) {
+                return false;
+            }
+        }
+        for (int i=0; i<map.length; i++) {
+            if (!testCase(i, line, false)) {
+                return false;
+            }
+        }
+        for (int i=0; i<map.length; i++){
+            if (!testCase(i, getNbLignes()-1-line, false)) {
+                return false;
+            }
+        }
+        if (line > 0){
+            for (int i=0; i<map[0].length; i++) {
+                if (!testCase(line-1, i, true)) {
+                    return false;
+                }
+            }
+            for (int i=0; i<map[0].length; i++){
+                if (!testCase(getNbColonnes() - line, i, true)) {
+                    return false;
+                }
+            }
+            for (int i=0; i<map.length; i++) {
+                if (!testCase(i, line-1, true)) {
+                    return false;
+                }
+            }
+            for (int i=0; i<map.length; i++){
+                if (!testCase(getNbLignes()-line, i, true)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public synchronized boolean lineResolved(int line) {
+        for (int i =0; i<map[0].length; i++) {
+            if (!testCase(line, i, false)) {
+                return false;
+            }
+        }
+        if (line > 0){
+            for (int i =0; i<map[0].length; i++) {
+                if (!testCase(line-1, i, true)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public synchronized void move(Agent a, Direction d) {
         map[a.getCurrentX()][a.getCurrentY()] = null;
         try {
             switch (d) {
@@ -106,23 +214,19 @@ public class Environnement {
     }
 
 
-    public Agent whichAgentBlocking(int x, int y, Direction d) {
+    public synchronized Agent whichAgentBlocking(int x, int y, Direction d) {
         switch (d) {
             case TOP -> {
-                if (x > 0) return map[x - 1][y];
-                else return null;
+                return (x > 0)? map[x - 1][y]:null;
             }
             case BOTTOM -> {
-                if (x < map.length - 1) return map[x + 1][y];
-                else return null;
+                return (x < map.length - 1)? map[x + 1][y]:null;
             }
             case LEFT -> {
-                if (y > 0) return map[x][y - 1];
-                else return null;
+                return (y > 0) ?map[x][y - 1]:null;
             }
             case RIGHT -> {
-                if (y < map[0].length - 1) return map[x][y + 1];
-                else return null;
+                return (y < map[0].length - 1) ? map[x][y + 1]:null;
             }
             default -> {
                 return null;
@@ -143,6 +247,7 @@ public class Environnement {
         ArrayList<Integer> agentNames = new ArrayList<>();
         int nbLignes = map.length;
         int nbColonnes = map[0].length;
+        messages.clear();
         int x, y, random_number;
         for (int i = 0; i < nbLignes; i++) {
             for (int j = 0; j < nbColonnes; j++) {
@@ -175,6 +280,8 @@ public class Environnement {
             agent.setFinalX((random_number - 1) / nbColonnes);
             agent.setFinalY((random_number - 1) % nbColonnes);
             finalMap[(random_number - 1) / nbColonnes][(random_number - 1) % nbColonnes] = random_number;
+            currentLine = 0;
+            messages.put(agent, new LinkedList<>());
         }
     }
 
@@ -201,23 +308,52 @@ public class Environnement {
     public boolean movePossible(int x, int y, Direction d) {
         switch (d) {
             case TOP -> {
-                if (x > 0) return true;
-                else return false;
+                return (x > 0);
             }
             case BOTTOM -> {
-                if (x < map.length - 1) return true;
-                else return false;
+                return (x < map.length - 1);
             }
             case LEFT -> {
-                if (y > 0) return true;
-                else return false;
+                return  (y > 0);
             }
             case RIGHT -> {
-                if (y < map[0].length - 1) return true;
-                else return false;
+                return (y < map[0].length - 1);
             }
             default -> {
                 return false;
+            }
+        }
+    }
+
+    public int getNbLignes(){
+        return map.length;
+    }
+
+    public int getNbColonnes(){
+        return map[0].length;
+    }
+
+    public int getNbAgents(){
+        return agents.size();
+    }
+
+    public synchronized void updateMap(Agent agent, int x, int y){
+        if (map[x][y] != agent){
+            if (map[x][y] == null) {
+                map[x][y] = agent;
+            }
+            else{
+                Random rand = new Random();
+                while (true) {
+                    x = rand.nextInt(map.length);
+                    y = rand.nextInt(map[0].length);
+                    if (x >= currentLine && map[x][y] == null) {
+                        map[x][y] = agent;
+                        map[x][y].setCurrentX(x);
+                        map[x][y].setCurrentY(y);
+                        break;
+                    }
+                }
             }
         }
     }

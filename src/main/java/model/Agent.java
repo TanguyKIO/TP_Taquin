@@ -1,6 +1,18 @@
 package model;
 
+import javafx.util.Pair;
+
 import java.util.*;
+
+import static model.Environnement.*;
+
+
+enum Direction {
+    TOP,
+    BOTTOM,
+    RIGHT,
+    LEFT
+}
 
 public class Agent extends Observable implements Runnable {
 
@@ -17,9 +29,16 @@ public class Agent extends Observable implements Runnable {
     private boolean interupt;
     private int maxInterations;
     private int nbIterations;
+    private int nbIterNoMove;
+    private int line;
+    private final LinkedList<Direction> memoire;
 
     public Agent(int name) {
         this.name = name;
+        this.memoire = new LinkedList<>();
+        nbIterations = 0;
+        nbIterNoMove = 0;
+        this.line = 0;
     }
 
     @Override
@@ -27,12 +46,51 @@ public class Agent extends Observable implements Runnable {
         while (true) {
             synchronized (this) {
                 if (!interupt) {
-                    action(false);
-                    setChanged();
-                    notifyObservers();
-                    env.verify();
+                    line = currentLine;
+                    if (nbIterations % 20 == 0) {
+                        env.updateMap(this, this.getCurrentX(), this.getCurrentY());
+                    }
+                    if (messages.get(this).size() > 5 || nbIterNoMove >= 5){
+                        moveAvailableDirection();
+                        nbIterNoMove = 0;
+                        messages.get(this).clear();
+                    }
+                    else {
+                        Pair<int[], Direction> message = getMessage();
+                        if (message == null && conditionsToMove()) {
+                            moveBestDirection();
+                        } else {
+                            if (message != null && conditionsToRelease()) {
+                                moveToRelease(message);
+                            }
+                            nbIterNoMove += 1;
+                        }
+                        switch (strategie) {
+                            case 0 -> {
+                                if (line < env.getNbLignes() - 2 && env.partResolved(line)) {
+                                    line++;
+                                    break;
+                                }
+                            }
+                            case 1 -> {
+                                if ((line < env.getNbLignes() - 2 || line < env.getNbColonnes()) && env.partResolved(line)) {
+                                    line++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    currentLine = line;
                     if (nbIterations == maxInterations){
                         this.setInterupt(true);
+                    }
+                    if (env.getNbAgents() <= 15 || (this.name % 5 == 0 && nbIterations % env.getNbAgents()/10-1 == 0)) {
+                        setChanged();
+                        notifyObservers();
+                    }
+                    if (env.verify()){
+                        setChanged();
+                        notifyObservers();
                     }
                     try {
                         Thread.sleep(sleepTime);
@@ -43,6 +101,10 @@ public class Agent extends Observable implements Runnable {
                 }
             }
         }
+    }
+
+    private Pair<int[], Direction> getMessage() {
+        return messages.get(this).pollFirst();
     }
 
     public int getCurrentX() {
@@ -61,70 +123,262 @@ public class Agent extends Observable implements Runnable {
         currentY = y;
     }
 
-    public LinkedList<Direction> path() {
+    public boolean conditionsToMove(){
+        switch (strategie) {
+            case 0 -> {
+                    return this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine || currentLine == env.getNbLignes()-2;
+            }
+            case 1 -> {
+                return this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine
+                        || this.getFinalY() <= currentLine || this.getCurrentY() <= currentLine
+                        || this.getFinalX() >= env.getNbLignes() - 1 - currentLine || this.getCurrentX() >= env.getNbLignes() - 1 - currentLine
+                        || this.getFinalY() >= env.getNbColonnes() - 1 - currentLine || this.getCurrentY() >= env.getNbColonnes() - 1 - currentLine
+                        || currentLine == env.getNbLignes()-2 || currentLine == env.getNbColonnes()-2;
+            }
+            case 2 -> {
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    public boolean conditionsToRelease(){
+        switch (strategie){
+            case 0 -> {
+                return this.getCurrentX() >= line;
+            }
+            case 1 -> {
+                return (this.getCurrentX() >= line && this.getCurrentX() <= env.getNbLignes()-1-line
+                        && this.getCurrentY() >= line && this.getCurrentY() <= env.getNbColonnes()-1-line);
+            }
+            case 2 -> {
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    public boolean conditionsRandomMove(){
+        switch (strategie){
+            case 0 -> {
+                return this.getFinalX() >= line;
+            }
+            case 1 -> {
+                return (this.getFinalX() >= line && this.getFinalX() <= env.getNbLignes()-1-line
+                        && this.getFinalY() >= line && this.getFinalY() <= env.getNbColonnes()-1-line);
+            }
+            case 2 -> {
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    public synchronized LinkedList<Direction> bestPath() {
         LinkedList<Direction> directions = new LinkedList<>();
         int diffX = finalX - currentX;
         int diffY = finalY - currentY;
         if (Math.abs(diffX) >= Math.abs(diffY)) {
             if (diffX < 0) directions.add(Direction.TOP);
-            else directions.add(Direction.BOTTOM);
-            if (diffY < 0) {
+            else if (diffX > 0) directions.add(Direction.BOTTOM);
+
+            if (diffY < 0) directions.add(Direction.LEFT);
+            else if (diffY > 0) directions.add(Direction.RIGHT);
+            else{
                 directions.add(Direction.LEFT);
-                if (directions.contains(Direction.TOP)) {
-                    directions.add(Direction.BOTTOM);
-                } else {
-                    directions.add(Direction.TOP);
-                }
                 directions.add(Direction.RIGHT);
-            } else {
-                directions.add(Direction.RIGHT);
-                if (directions.contains(Direction.TOP)) {
-                    directions.add(Direction.BOTTOM);
-                } else {
-                    directions.add(Direction.TOP);
-                }
-                directions.add(Direction.LEFT);
             }
         } else {
             if (diffY < 0) directions.add(Direction.LEFT);
-            else directions.add(Direction.RIGHT);
-            if (diffX < 0) {
+            else if (diffY > 0) directions.add(Direction.RIGHT);
+
+            if (diffX < 0) directions.add(Direction.TOP);
+            else if (diffX > 0) directions.add(Direction.BOTTOM);
+            else{
                 directions.add(Direction.TOP);
-                if (directions.contains(Direction.LEFT)) {
-                    directions.add(Direction.RIGHT);
-                } else {
-                    directions.add(Direction.LEFT);
-                }
                 directions.add(Direction.BOTTOM);
-            } else {
-                directions.add(Direction.BOTTOM);
-                if (directions.contains(Direction.LEFT)) {
-                    directions.add(Direction.RIGHT);
-                } else {
-                    directions.add(Direction.LEFT);
+            }
+        }
+        //directions = removeDirections(directions);
+        return directions;
+    }
+
+    private synchronized LinkedList<Direction> removeDirections(LinkedList<Direction> directions) {
+        switch (strategie){
+            case 0-> {
+                while(currentX - 1 < line && directions.remove(Direction.TOP)){
+                    continue;
                 }
-                directions.add(Direction.TOP);
+            }
+            case 1-> {
+                while(currentX - 1 < line && directions.remove(Direction.TOP)){
+                    continue;
+                }
+                while(currentX + 1 > env.getNbLignes() - 1 - line && directions.remove(Direction.BOTTOM)){
+                    continue;
+                }
+                while(currentY - 1 < line && directions.remove(Direction.LEFT)){
+                    continue;
+                }
+                while(currentY + 1 > env.getNbColonnes() - 1 - line && directions.remove(Direction.RIGHT)){
+                    continue;
+                }
             }
         }
         return directions;
     }
 
-    public void action(boolean forced) {
-        if ((finalX != currentX || finalY != currentY) || forced) {
-            LinkedList<Direction> availableDirections = path();
-            int count = 0;
-            for (Direction d : availableDirections) {
-                Agent blockingAgent = env.whichAgentBlocking(currentX, currentY, d);
-                if (blockingAgent == null && env.movePossible(currentX, currentY, d)) {
-                    env.move(this, d);
-                    break;
-                } else if (count >= 1 && !forced && blockingAgent != null) {
-                    System.out.println(name + "pushed agent " + blockingAgent.getNom());
-                    blockingAgent.action(true);
-                }
-                count++;
+    public synchronized LinkedList<Direction> bestPath(int[] positionToRelease, Direction d) {
+        /*LinkedList<Direction> directions = new LinkedList<>();
+        int diffX = positionToRelease[0] - currentX;
+        int diffY = positionToRelease[1] - currentY;
+        if (Math.abs(diffX) >= Math.abs(diffY)) {
+            if (diffX > 0) directions.add(Direction.TOP);
+            else if (diffX < 0) directions.add(Direction.BOTTOM);
+            else{
+                directions.add(Direction.TOP);
+                directions.add(Direction.BOTTOM);
+            }
+
+            if (diffY > 0) directions.add(Direction.LEFT);
+            else if (diffY < 0) directions.add(Direction.RIGHT);
+            else{
+                directions.add(Direction.LEFT);
+                directions.add(Direction.RIGHT);
+            }
+        } else {
+            if (diffY > 0) directions.add(Direction.LEFT);
+            else if (diffY < 0) directions.add(Direction.RIGHT);
+
+            if (diffX > 0) directions.add(Direction.TOP);
+            else if (diffX < 0) directions.add(Direction.BOTTOM);
+            else{
+                directions.add(Direction.TOP);
+                directions.add(Direction.BOTTOM);
             }
         }
+        */
+        LinkedList<Direction> directions = bestPath();
+        switch (d){
+            case LEFT -> {
+                directions.remove(Direction.RIGHT);
+                directions.add(Direction.LEFT);
+                directions.add(Direction.TOP);
+                directions.add(Direction.BOTTOM);
+                directions.add(Direction.RIGHT);
+                break;
+            }
+            case RIGHT -> {
+                directions.remove(Direction.LEFT);
+                directions.add(Direction.RIGHT);
+                directions.add(Direction.TOP);
+                directions.add(Direction.BOTTOM);
+                directions.add(Direction.LEFT);
+                break;
+            }
+            case TOP -> {
+                directions.remove(Direction.BOTTOM);
+                directions.add(Direction.TOP);
+                directions.add(Direction.LEFT);
+                directions.add(Direction.RIGHT);
+                directions.add(Direction.BOTTOM);
+                break;
+            }
+            case BOTTOM -> {
+                directions.remove(Direction.TOP);
+                directions.add(Direction.BOTTOM);
+                directions.add(Direction.LEFT);
+                directions.add(Direction.RIGHT);
+                directions.add(Direction.TOP);
+                break;
+            }
+        }
+        //directions = removeDirections(directions);
+        Direction direction = findRepetition();
+        while (directions.remove(direction)){
+            continue;
+        }
+        return directions;
+    }
+
+    public synchronized void moveBestDirection(){
+        if (finalX != currentX || finalY != currentY) {
+            LinkedList<Direction> directions = bestPath();
+            Direction direction = findRepetition();
+            if (direction != null){
+                directions =  findFirstPossible(directions);
+            }
+            move(directions, false);
+        }
+    }
+
+    public synchronized void moveAvailableDirection(){
+        if (conditionsRandomMove()){
+            List<Direction> directions = Arrays.asList(Direction.values());
+            Collections.shuffle(directions);
+            for (Direction d : directions) {
+                if (env.movePossible(this.getCurrentX(), this.getCurrentY(), d) && env.whichAgentBlocking(currentX, currentY, d) == null) {
+                    env.move(this, d);
+                    updateMemoire(d);
+                }
+            }
+        }
+    }
+
+    public synchronized void move(LinkedList<Direction> directions, boolean mustRelease) {
+        boolean moved = false;
+        Agent blockingAgent;
+        if (nbIterNoMove == 3){
+            Collections.shuffle(directions);
+        }
+        for (Direction d : directions) {
+            blockingAgent = env.whichAgentBlocking(currentX, currentY, d);
+            if (blockingAgent == null && env.movePossible(currentX, currentY, d)) {
+                env.move(this, d);
+                updateMemoire(d);
+                moved = true;
+                break;
+            }
+        }
+        if (!moved) {
+            nbIterNoMove += 1;
+            for (int i=0; i<directions.size(); i++) {
+                Direction d = directions.get(i);
+                blockingAgent = env.whichAgentBlocking(currentX, currentY, d);
+                if (env.movePossible(currentX, currentY, d) && (!mustRelease || i!= directions.size()-1)
+                && blockingAgent != null && blockingAgent.conditionsToRelease()) {
+                    //System.out.println(this.name + " pushed " + env.whichAgentBlocking(currentX, currentY, d).getNom());
+                    addMessage(blockingAgent, d, new int[]{finalX, finalY});
+                    break;
+                }
+            }
+        }
+    }
+
+    public synchronized LinkedList<Direction> findFirstPossible(LinkedList<Direction> directions){
+        for (Direction d : directions) {
+            if (env.movePossible(currentX, currentY, d)) {
+                LinkedList<Direction> newDirection = new LinkedList<>();
+                newDirection.add(d);
+                return newDirection;
+            }
+        }
+        return directions;
+    }
+
+    public synchronized void moveToRelease(Pair<int[], Direction> message) {
+        move(bestPath(message.getKey(), message.getValue()), true);
+    }
+
+    public synchronized void addMessage(Agent agent, Direction d, int[] message){
+        if (agent != null)
+        messages.get(agent).add(new Pair<>(message, d));
     }
 
     public int getFinalX() {
@@ -166,11 +420,36 @@ public class Agent extends Observable implements Runnable {
     public void setMaxInterations(int maxInterations) {
         this.maxInterations = maxInterations;
     }
+
+    public void updateMemoire(Direction d) {
+        if (memoire.size() == 6) {
+            memoire.remove();
+        }
+        memoire.add(d);
+    }
+
+    public Direction findRepetition(){
+        boolean repetition = true;
+        if (memoire.size() == 6) {
+            for (int j = memoire.size()-3; j>= memoire.size()-5; j -= 2) {
+                if (Arrays.equals(new Direction[]{memoire.get(memoire.size() - 1), memoire.get(memoire.size() - 2)}, new Direction[]{memoire.get(j), memoire.get(j - 1)})) {
+                    continue;
+                }
+                else {
+                    repetition = false;
+                    break;
+                }
+            }
+            if (repetition){
+                return memoire.get(memoire.size() - 2);
+            }
+            if (Arrays.equals(new Direction[]{memoire.get(memoire.size() - 1), memoire.get(memoire.size() - 2), memoire.get(memoire.size() - 3)}, new Direction[]{memoire.get(memoire.size() - 4), memoire.get(memoire.size() - 5), memoire.get(memoire.size() - 6)})) {
+                return memoire.get(memoire.size() - 3);
+            }
+        }
+        return null;
+    }
+
 }
 
-enum Direction {
-    TOP,
-    BOTTOM,
-    RIGHT,
-    LEFT
-}
+
