@@ -31,6 +31,7 @@ public class Agent extends Observable implements Runnable {
     private int nbIterations;
     private int nbIterNoMove;
     private int line;
+    private int orientation;
     private final LinkedList<Direction> memoire;
 
     public Agent(int name) {
@@ -47,15 +48,18 @@ public class Agent extends Observable implements Runnable {
             synchronized (this) {
                 if (!interupt) {
                     line = currentLine;
-                    if (nbIterations % 20 == 0) {
+                    orientation = Environnement.orientation;
+                    if (nbIterations % 30 == 0) {
                         env.updateMap(this, this.getCurrentX(), this.getCurrentY());
                     }
-                    if (messages.get(this).size() > 5 || nbIterNoMove >= 5){
-                        moveAvailableDirection();
-                        nbIterNoMove = 0;
-                        messages.get(this).clear();
-                    }
-                    else {
+                    if (messages.get(this).size() > 5 || nbIterNoMove >= 5) {
+                        if (!moveAvailableDirection()) {
+                            pushAvailableDirection();
+                        } else {
+                            nbIterNoMove = 0;
+                            messages.get(this).clear();
+                        }
+                    } else {
                         Pair<int[], Direction> message = getMessage();
                         if (message == null && conditionsToMove()) {
                             moveBestDirection();
@@ -63,32 +67,41 @@ public class Agent extends Observable implements Runnable {
                             if (message != null && conditionsToRelease()) {
                                 moveToRelease(message);
                             }
-                            nbIterNoMove += 1;
+                            if (!bienPositionne()) {
+                                nbIterNoMove += 1;
+                            }
                         }
                         switch (strategie) {
                             case 0 -> {
-                                if (line < env.getNbLignes() - 2 && env.partResolved(line)) {
+                                if (line < env.getNbLignes() - 2 && env.partResolved(line, orientation)) {
                                     line++;
-                                    break;
                                 }
                             }
                             case 1 -> {
-                                if ((line < env.getNbLignes() - 2 || line < env.getNbColonnes()) && env.partResolved(line)) {
+                                if ((line < env.getNbLignes() - 2 || line < env.getNbColonnes()) && env.partResolved(line, orientation)) {
                                     line++;
-                                    break;
+                                }
+                            }
+                            case 2 -> {
+                                if ((line < env.getNbLignes() - 2 || line < env.getNbColonnes()) && env.partResolved(line, orientation)) {
+                                    if (orientation == 3) {
+                                        line++;
+                                        orientation = 0;
+                                    } else {
+                                        orientation++;
+                                    }
                                 }
                             }
                         }
                     }
                     currentLine = line;
-                    if (nbIterations == maxInterations){
+                    Environnement.orientation = orientation;
+                    if (nbIterations == maxInterations) {
                         this.setInterupt(true);
                     }
-                    if (env.getNbAgents() <= 15 || (this.name % 5 == 0 && nbIterations % env.getNbAgents()/10-1 == 0)) {
-                        setChanged();
-                        notifyObservers();
-                    }
-                    if (env.verify()){
+                    setChanged();
+                    notifyObservers();
+                    if (env.verify()) {
                         setChanged();
                         notifyObservers();
                     }
@@ -124,9 +137,10 @@ public class Agent extends Observable implements Runnable {
     }
 
     public boolean conditionsToMove(){
+        if (bienPositionne()) return false;
         switch (strategie) {
             case 0 -> {
-                    return this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine || currentLine == env.getNbLignes()-2;
+                return this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine || currentLine == env.getNbLignes()-2;
             }
             case 1 -> {
                 return this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine
@@ -136,6 +150,34 @@ public class Agent extends Observable implements Runnable {
                         || currentLine == env.getNbLignes()-2 || currentLine == env.getNbColonnes()-2;
             }
             case 2 -> {
+                if (currentLine == env.getNbLignes()-2) return true;
+                else{
+                    switch (Environnement.orientation){
+                        case 0 -> {
+                            return this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine;
+                        }
+                        case 1 -> {
+                            return (this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine)
+                                    || (this.getFinalY() <= currentLine || this.getCurrentY() <= currentLine);
+                        }
+                        case 2 -> {
+                            return (this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine)
+                                    || (this.getFinalY() <= currentLine || this.getCurrentY() <= currentLine)
+                                    || (this.getFinalX() >= env.getNbColonnes()-1-line || this.getCurrentX() >= env.getNbColonnes()-1-line);
+                        }
+                        case 3 -> {
+                            return (this.getFinalX() <= currentLine || this.getCurrentX() <= currentLine)
+                                    || (this.getFinalY() <= currentLine || this.getCurrentY() <= currentLine)
+                                    || (this.getFinalX() >= env.getNbColonnes()-1-line || this.getCurrentX() >= env.getNbColonnes()-1-line)
+                                    || (this.getFinalY() >= env.getNbLignes()-1-line || this.getCurrentY() >= env.getNbLignes()-1-line);
+                        }
+                        default -> {
+                            return false;
+                        }
+                    }
+                }
+            }
+            case 3 -> {
                 return true;
             }
             default -> {
@@ -145,15 +187,40 @@ public class Agent extends Observable implements Runnable {
     }
 
     public boolean conditionsToRelease(){
+        int nbLignes = env.getNbLignes();
+        int nbColonnes = env.getNbColonnes();
         switch (strategie){
             case 0 -> {
                 return this.getCurrentX() >= line;
             }
             case 1 -> {
-                return (this.getCurrentX() >= line && this.getCurrentX() <= env.getNbLignes()-1-line
-                        && this.getCurrentY() >= line && this.getCurrentY() <= env.getNbColonnes()-1-line);
+                return (this.getCurrentX() >= line && this.getCurrentX() <= nbLignes-1-line
+                        && this.getCurrentY() >= line && this.getCurrentY() <= nbColonnes-1-line);
             }
             case 2 -> {
+                switch (Environnement.orientation){
+                    case 0 -> {
+                        return this.getCurrentX() >= line && this.getCurrentX() <= nbLignes - 1 - line
+                                && this.getCurrentY() >= line && this.getCurrentY() <= nbColonnes - 1 - line;
+                    }
+                    case 1 -> {
+                        return this.getCurrentX() > line && this.getCurrentY() >= line
+                                && this.getCurrentX() <= nbLignes - 1 - line && this.getCurrentY() <= nbColonnes - 1 - line;
+                    }
+                    case 2 -> {
+                        return this.getCurrentX() > line && this.getCurrentY() > line && this.getCurrentX() <= nbLignes-1-line
+                                && this.getCurrentY() <= nbColonnes - 1 - line;
+                    }
+                    case 3 -> {
+                        return this.getCurrentX() > line && this.getCurrentY() > line && this.getCurrentX() < nbLignes - 1 -line
+                                && this.getCurrentY() <= nbColonnes - 1 -line;
+                    }
+                    default -> {
+                        return false;
+                    }
+                }
+            }
+            case 3 -> {
                 return true;
             }
             default -> {
@@ -172,6 +239,25 @@ public class Agent extends Observable implements Runnable {
                         && this.getFinalY() >= line && this.getFinalY() <= env.getNbColonnes()-1-line);
             }
             case 2 -> {
+                switch (Environnement.orientation){
+                    case 0 -> {
+                        return this.getFinalX() >= line;
+                    }
+                    case 1 -> {
+                        return this.getFinalY() >= line;
+                    }
+                    case 2 -> {
+                        return this.getFinalX() <= env.getNbLignes()-1-line;
+                    }
+                    case 3 -> {
+                        return this.getFinalY() <= env.getNbColonnes()-1-line;
+                    }
+                    default -> {
+                        return false;
+                    }
+                }
+            }
+            case 3 -> {
                 return true;
             }
             default -> {
@@ -184,86 +270,61 @@ public class Agent extends Observable implements Runnable {
         LinkedList<Direction> directions = new LinkedList<>();
         int diffX = finalX - currentX;
         int diffY = finalY - currentY;
-        if (Math.abs(diffX) >= Math.abs(diffY)) {
-            if (diffX < 0) directions.add(Direction.TOP);
-            else if (diffX > 0) directions.add(Direction.BOTTOM);
+        if (diffX == 0 && diffY == 0){
+            directions.add(Direction.LEFT);
+            directions.add(Direction.TOP);
+            directions.add(Direction.BOTTOM);
+            directions.add(Direction.RIGHT);
+            Collections.shuffle(directions);
+        }
+        else {
+            if (Math.abs(diffX) >= Math.abs(diffY)) {
+                if (diffX < 0) directions.add(Direction.TOP);
+                else if (diffX > 0) directions.add(Direction.BOTTOM);
 
-            if (diffY < 0) directions.add(Direction.LEFT);
-            else if (diffY > 0) directions.add(Direction.RIGHT);
-            else{
-                directions.add(Direction.LEFT);
-                directions.add(Direction.RIGHT);
-            }
-        } else {
-            if (diffY < 0) directions.add(Direction.LEFT);
-            else if (diffY > 0) directions.add(Direction.RIGHT);
+                if (diffY < 0) directions.add(Direction.LEFT);
+                else if (diffY > 0) directions.add(Direction.RIGHT);
+                else {
+                    directions.add(Direction.LEFT);
+                    directions.add(Direction.RIGHT);
+                }
+            } else {
+                if (diffY < 0) directions.add(Direction.LEFT);
+                else if (diffY > 0) directions.add(Direction.RIGHT);
 
-            if (diffX < 0) directions.add(Direction.TOP);
-            else if (diffX > 0) directions.add(Direction.BOTTOM);
-            else{
-                directions.add(Direction.TOP);
-                directions.add(Direction.BOTTOM);
+                if (diffX < 0) directions.add(Direction.TOP);
+                else if (diffX > 0) directions.add(Direction.BOTTOM);
+                else {
+                    directions.add(Direction.TOP);
+                    directions.add(Direction.BOTTOM);
+                }
             }
         }
-        //directions = removeDirections(directions);
+        directions = removeDirections(directions);
         return directions;
     }
 
     private synchronized LinkedList<Direction> removeDirections(LinkedList<Direction> directions) {
         switch (strategie){
             case 0-> {
-                while(currentX - 1 < line && directions.remove(Direction.TOP)){
-                    continue;
+                while(currentX < line && directions.remove(Direction.TOP)){
                 }
             }
-            case 1-> {
-                while(currentX - 1 < line && directions.remove(Direction.TOP)){
-                    continue;
+            case 1, 2-> {
+                while(currentX < line && directions.remove(Direction.TOP)){
                 }
-                while(currentX + 1 > env.getNbLignes() - 1 - line && directions.remove(Direction.BOTTOM)){
-                    continue;
+                while(currentX > env.getNbLignes() - 1 - line && directions.remove(Direction.BOTTOM)){
                 }
-                while(currentY - 1 < line && directions.remove(Direction.LEFT)){
-                    continue;
+                while(currentY < line && directions.remove(Direction.LEFT)){
                 }
-                while(currentY + 1 > env.getNbColonnes() - 1 - line && directions.remove(Direction.RIGHT)){
-                    continue;
+                while(currentY > env.getNbColonnes() - 1 - line && directions.remove(Direction.RIGHT)){
                 }
             }
         }
         return directions;
     }
 
-    public synchronized LinkedList<Direction> bestPath(int[] positionToRelease, Direction d) {
-        /*LinkedList<Direction> directions = new LinkedList<>();
-        int diffX = positionToRelease[0] - currentX;
-        int diffY = positionToRelease[1] - currentY;
-        if (Math.abs(diffX) >= Math.abs(diffY)) {
-            if (diffX > 0) directions.add(Direction.TOP);
-            else if (diffX < 0) directions.add(Direction.BOTTOM);
-            else{
-                directions.add(Direction.TOP);
-                directions.add(Direction.BOTTOM);
-            }
-
-            if (diffY > 0) directions.add(Direction.LEFT);
-            else if (diffY < 0) directions.add(Direction.RIGHT);
-            else{
-                directions.add(Direction.LEFT);
-                directions.add(Direction.RIGHT);
-            }
-        } else {
-            if (diffY > 0) directions.add(Direction.LEFT);
-            else if (diffY < 0) directions.add(Direction.RIGHT);
-
-            if (diffX > 0) directions.add(Direction.TOP);
-            else if (diffX < 0) directions.add(Direction.BOTTOM);
-            else{
-                directions.add(Direction.TOP);
-                directions.add(Direction.BOTTOM);
-            }
-        }
-        */
+    public synchronized LinkedList<Direction> bestPath(Direction d) {
         LinkedList<Direction> directions = bestPath();
         switch (d){
             case LEFT -> {
@@ -299,7 +360,7 @@ public class Agent extends Observable implements Runnable {
                 break;
             }
         }
-        //directions = removeDirections(directions);
+        directions = removeDirections(directions);
         Direction direction = findRepetition();
         while (directions.remove(direction)){
             continue;
@@ -308,17 +369,19 @@ public class Agent extends Observable implements Runnable {
     }
 
     public synchronized void moveBestDirection(){
-        if (finalX != currentX || finalY != currentY) {
-            LinkedList<Direction> directions = bestPath();
-            Direction direction = findRepetition();
-            if (direction != null){
-                directions =  findFirstPossible(directions);
-            }
-            move(directions, false);
+        LinkedList<Direction> directions = bestPath();
+        Direction direction = findRepetition();
+        if (direction != null){
+            directions =  findFirstPossible(directions);
         }
+        move(directions, false);
     }
 
-    public synchronized void moveAvailableDirection(){
+    private boolean bienPositionne() {
+        return finalX == currentX && finalY == currentY;
+    }
+
+    public synchronized boolean moveAvailableDirection(){
         if (conditionsRandomMove()){
             List<Direction> directions = Arrays.asList(Direction.values());
             Collections.shuffle(directions);
@@ -326,6 +389,25 @@ public class Agent extends Observable implements Runnable {
                 if (env.movePossible(this.getCurrentX(), this.getCurrentY(), d) && env.whichAgentBlocking(currentX, currentY, d) == null) {
                     env.move(this, d);
                     updateMemoire(d);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public synchronized void pushAvailableDirection(){
+        if (conditionsRandomMove()){
+            List<Direction> directions = Arrays.asList(Direction.values());
+            Collections.shuffle(directions);
+            Agent blockingAgent;
+            for (Direction d : directions) {
+                blockingAgent = env.whichAgentBlocking(currentX, currentY, d);
+                if (env.movePossible(this.getCurrentX(), this.getCurrentY(), d) && blockingAgent != null
+                        && blockingAgent.conditionsToRelease()) {
+                    addMessage(blockingAgent, d, new int[]{finalX, finalY});
+                    memoire.clear();
+                    break;
                 }
             }
         }
@@ -333,7 +415,9 @@ public class Agent extends Observable implements Runnable {
 
     public synchronized void move(LinkedList<Direction> directions, boolean mustRelease) {
         boolean moved = false;
+        boolean pushed = false;
         Agent blockingAgent;
+        LinkedList<Pair<Agent, Direction>> wellPositionned = null;
         if (nbIterNoMove == 3){
             Collections.shuffle(directions);
         }
@@ -348,15 +432,27 @@ public class Agent extends Observable implements Runnable {
         }
         if (!moved) {
             nbIterNoMove += 1;
+            wellPositionned = new LinkedList<>();
             for (int i=0; i<directions.size(); i++) {
                 Direction d = directions.get(i);
                 blockingAgent = env.whichAgentBlocking(currentX, currentY, d);
                 if (env.movePossible(currentX, currentY, d) && (!mustRelease || i!= directions.size()-1)
                 && blockingAgent != null && blockingAgent.conditionsToRelease()) {
                     //System.out.println(this.name + " pushed " + env.whichAgentBlocking(currentX, currentY, d).getNom());
-                    addMessage(blockingAgent, d, new int[]{finalX, finalY});
-                    break;
+                    if (blockingAgent.bienPositionne()){
+                        wellPositionned.add(new Pair<>(blockingAgent, d));
+                    }
+                    else {
+                        addMessage(blockingAgent, d, new int[]{finalX, finalY});
+                        pushed = true;
+                        break;
+                    }
                 }
+            }
+        }
+        if (!moved && !pushed){
+            for (Pair<Agent, Direction> pair:wellPositionned){
+                addMessage(pair.getKey(), pair.getValue(), new int[]{finalX, finalY});
             }
         }
     }
@@ -373,7 +469,7 @@ public class Agent extends Observable implements Runnable {
     }
 
     public synchronized void moveToRelease(Pair<int[], Direction> message) {
-        move(bestPath(message.getKey(), message.getValue()), true);
+        move(bestPath(message.getValue()), true);
     }
 
     public synchronized void addMessage(Agent agent, Direction d, int[] message){

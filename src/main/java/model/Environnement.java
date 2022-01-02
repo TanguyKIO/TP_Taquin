@@ -12,19 +12,28 @@ public class Environnement {
     private Agent[][] map;
     private int[][] finalMap;
     private ArrayList<Thread> runningThreads;
+    private double multiplicateurVitesseAffichage = 1;
 
     public static HashMap<Agent, LinkedList< Pair<int[], Direction>>> messages;
     public static int currentLine;
+    public static int orientation;
     public static int strategie;
 
-    public Environnement(int nbLignes, int nbColonnes, ArrayList<Agent> agents, int strategie) {
+    public Environnement(int nbLignes, int nbColonnes, ArrayList<Agent> agents, int strategie, int vitesseAffichage) {
         Random rand = new Random();
-        messages = new HashMap<>();
-        currentLine = 0;
+        this.messages = new HashMap<>();
+        this.currentLine = 0;
         this.strategie = strategie;
         this.agents = agents;
-        map = new Agent[nbLignes][nbColonnes];
-        finalMap = new int[nbLignes][nbColonnes];
+        this.map = new Agent[nbLignes][nbColonnes];
+        this.finalMap = new int[nbLignes][nbColonnes];
+        switch (vitesseAffichage){
+            case 0 -> this.multiplicateurVitesseAffichage = 2;
+            case 1 -> this.multiplicateurVitesseAffichage = 1;
+            case 2 -> this.multiplicateurVitesseAffichage = 0.33;
+            case 3 -> this.multiplicateurVitesseAffichage = 0.16;
+        }
+
         int x, y;
 
         // Conception du schéma initiale
@@ -44,7 +53,7 @@ public class Environnement {
             int agentName = agent.getNom();
             agent.setFinalX((agentName - 1) / nbColonnes);
             agent.setFinalY((agentName - 1) % nbColonnes);
-            agent.setSleep(6000/agents.size());
+            agent.setSleep((int)(6000/agents.size()*multiplicateurVitesseAffichage));
             agent.setMaxInterations(10000);
             finalMap[(agentName - 1) / nbColonnes][(agentName - 1) % nbColonnes] = agentName;
             messages.put(agent, new LinkedList<>());
@@ -90,10 +99,8 @@ public class Environnement {
     }
 
     public synchronized boolean testCase(int x, int y, boolean precedent_line){
-        if (map[x][y] == null) {
-            if (finalMap[x][y] != 0) {
-                return false;
-            }
+        if ((finalMap[x][y] == 0 && map[x][y] != null) || (map[x][y] == null && finalMap[x][y] != 0)) {
+            return false;
         }
         if (!precedent_line) {
             if (finalMap[x][y] != 0 && map[x][y] != null && map[x][y].getNom() != finalMap[x][y]){
@@ -104,7 +111,7 @@ public class Environnement {
         return true;
     }
 
-    public synchronized boolean partResolved(int line){
+    public synchronized boolean partResolved(int line, int orientation){
         switch (strategie){
             case 0 -> {
                 return lineResolved(line);
@@ -113,6 +120,9 @@ public class Environnement {
                 return contourResolved(line);
             }
             case 2 -> {
+                return lineResolved(line, orientation);
+            }
+            case 3 -> {
                 return true;
             }
             default -> {
@@ -142,6 +152,12 @@ public class Environnement {
                 return false;
             }
         }
+
+        if (angleBlocked(line, line)) return false;
+        if (angleBlocked(getNbLignes()-1-line, line)) return false;
+        if (angleBlocked(getNbLignes()-1-line, getNbColonnes()-1-line)) return false;
+        if (angleBlocked(line, getNbColonnes()-1-line)) return false;
+
         if (line > 0){
             for (int i=0; i<map[0].length; i++) {
                 if (!testCase(line-1, i, true)) {
@@ -180,7 +196,86 @@ public class Environnement {
                 }
             }
         }
+        if (line > 1){
+            for (int i =0; i<map[0].length; i++) {
+                if (!testCase(line-2, i, true)) {
+                    return false;
+                }
+            }
+        }
         return true;
+    }
+
+    public synchronized boolean lineResolved(int line, int orientation) {
+        switch (orientation){
+            case 0 -> {
+                for (int i =0; i<map[0].length; i++) {
+                    if (!testCase(line, i, false)) {
+                        return false;
+                    }
+                }
+                if (line > 0){
+                    for (int i =0; i<map[0].length; i++) {
+                        if (!testCase(line-1, i, true)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            case 1 -> {
+                for (int i=0; i<map.length; i++) {
+                    if (!testCase(i, line, false)) {
+                        return false;
+                    }
+                }
+                if (line > 0) {
+                    for (int i = 0; i < map.length; i++) {
+                        if (!testCase(i, line - 1, true)) {
+                            return false;
+                        }
+                    }
+                }
+                if (angleBlocked(line, line)) return false;
+            }
+            case 2 -> {
+                for (int i = 0; i < map[0].length; i++) {
+                    if (!testCase(getNbColonnes() - 1 - line, i, false)) {
+                        return false;
+                    }
+                }
+                if (line > 0) {
+                    for (int i = 0; i < map[0].length; i++) {
+                        if (!testCase(getNbColonnes() - line, i, true)) {
+                            return false;
+                        }
+                    }
+                }
+                if (angleBlocked(getNbLignes()-1-line, line)) return false;
+            }
+            case 3 -> {
+                for (int i=0; i<map.length; i++){
+                    if (!testCase(i, getNbLignes()-1-line, false)) {
+                        return false;
+                    }
+                }
+                if (line > 0){
+                    for (int i=0; i<map.length; i++){
+                        if (!testCase(getNbLignes()-line, i, true)) {
+                            return false;
+                        }
+                    }
+                }
+                if (angleBlocked(getNbLignes()-1-line, getNbColonnes()-1-line)) return false;
+                if (angleBlocked(line, getNbColonnes()-1-line)) return false;
+            }
+        }
+        return true;
+    }
+
+    public synchronized boolean angleBlocked(int x, int y){
+        return map[x][y] != null
+                && finalMap [x][y] != map[x][y].getNom()
+                && finalMap[x][y] != 0;
     }
 
     public synchronized void move(Agent a, Direction d) {

@@ -2,7 +2,6 @@ package viewController;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -20,14 +19,12 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import model.Agent;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Observer;
 import java.util.Observable;
-import java.util.Set;
+import java.util.Observer;
 
 
 public class TaquinView extends Application implements Observer {
@@ -40,6 +37,7 @@ public class TaquinView extends Application implements Observer {
     private int nbLignes;
     private int nbColonnes;
     private int strategie;
+    private int vitesseAffichage;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
@@ -61,35 +59,42 @@ public class TaquinView extends Application implements Observer {
         grid.add(lblNbLignes, 0, 1);
 
         TextField nbLignesTextField = new TextField();
-        nbLignesTextField.setText("4");
+        nbLignesTextField.setText("5");
         grid.add(nbLignesTextField, 1, 1);
 
         Label lblNbColonnes = new Label("Nombre de colonnes (entre 3 et 6) : ");
         grid.add(lblNbColonnes, 0, 2);
 
         TextField nbColonnesTextField = new TextField();
-        nbColonnesTextField.setText("4");
+        nbColonnesTextField.setText("5");
         grid.add(nbColonnesTextField, 1, 2);
 
-        Label lblNbAgents = new Label("Nombre d'agents (entre 3 et nombre de cas - 1) :");
+        Label lblNbAgents = new Label("Nombre d'agents (entre 3 et nombre de cases - 1) :");
         grid.add(lblNbAgents, 0, 3);
 
         TextField nbAgentsTextField = new TextField();
-        nbAgentsTextField.setText("4");
+        nbAgentsTextField.setText("20");
         grid.add(nbAgentsTextField, 1, 3);
 
-        Label lblStrategie = new Label("Stratégie (0: En ligne, 1: En spirale, 2: Pas de contrainte) :");
+        Label lblStrategie = new Label("Stratégie (0: En ligne, 1: Depuis les extrémités, 2: En spirale,  3: Pas de contrainte) :");
         grid.add(lblStrategie, 0, 4);
 
         TextField strategieTextField = new TextField();
-        strategieTextField.setText("1");
+        strategieTextField.setText("0");
         grid.add(strategieTextField, 1, 4);
+
+        Label lblAffichage = new Label("Vitesse d'affichage (0: Lent, 1: Normal, 2: Rapide, 3: Très rapide) :");
+        grid.add(lblAffichage, 0, 5);
+
+        TextField affichageTextField = new TextField();
+        affichageTextField.setText("2");
+        grid.add(affichageTextField, 1, 5);
 
         Button btn = new Button("Valider");
         HBox hbBtn = new HBox(10);
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
         hbBtn.getChildren().add(btn);
-        grid.add(hbBtn, 1, 5);
+        grid.add(hbBtn, 1, 6);
 
         Stage primaryStage = new Stage();
         currentStage = primaryStage;
@@ -133,7 +138,7 @@ public class TaquinView extends Application implements Observer {
             }
             try{
                 strategie = Integer.parseInt(strategieTextField.getText());
-                if (strategie < 0 || strategie > 2){
+                if (strategie < 0 || strategie > 3){
                     throw new Exception();
                 }
             }
@@ -141,12 +146,20 @@ public class TaquinView extends Application implements Observer {
                 strategieTextField.setText("");
                 parametersOK = false;
             }
+            try{
+                vitesseAffichage = Integer.parseInt(affichageTextField.getText());
+                if (vitesseAffichage < 0 || vitesseAffichage > 3){
+                    throw new Exception();
+                }
+            }
+            catch (Exception error){
+                affichageTextField.setText("");
+                parametersOK = false;
+            }
             if (parametersOK) {
                 primaryStage.close();
                 creerSceneJeu();
-                Platform.runLater(() -> {
-                    lancerPartie();
-                        });
+                lancerPartie();
             }
         });
     }
@@ -409,7 +422,7 @@ public class TaquinView extends Application implements Observer {
         }
     }
 
-    private void updateSubSmallGridSolution(){
+    private synchronized void updateSubSmallGridSolution(){
         int iter = 4;
         ImageView image;
         int [][] finalMap = app.getEnv().getFinalMap();
@@ -528,7 +541,7 @@ public class TaquinView extends Application implements Observer {
         }
     }
 
-    private void createSubBigGridSolution(){
+    private synchronized void createSubBigGridSolution(){
         StackPane stack;
         Rectangle rect;
         Text text;
@@ -585,7 +598,7 @@ public class TaquinView extends Application implements Observer {
         }
     }
 
-    private void updateSubBigGridSolution(){
+    private synchronized void updateSubBigGridSolution(){
         Rectangle rect;
         Text text;
         int iter = 4;
@@ -611,7 +624,7 @@ public class TaquinView extends Application implements Observer {
     }
 
     private void initialiserPartie () {
-        app = new model.Application(nbLignes, nbColonnes, nbAgents, strategie);
+        app = new model.Application(nbLignes, nbColonnes, nbAgents, strategie, vitesseAffichage);
         afficherGrille (); // On réinitialise la grille
     }
 

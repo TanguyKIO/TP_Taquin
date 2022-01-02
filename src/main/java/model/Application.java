@@ -10,7 +10,7 @@ public class Application {
 
     private Environnement env;
 
-    public Application(int nbLignes, int nbColonnes, int nbAgents, int strategie){
+    public Application(int nbLignes, int nbColonnes, int nbAgents, int strategie, int vitesseAffichage){
         ArrayList<Agent> agents = new ArrayList<>();
         ArrayList<Integer> agentNames = new ArrayList<>();
         Random rand = new Random();
@@ -25,7 +25,7 @@ public class Application {
             }
             agents.add(new Agent(random_number));
         }
-        env = new Environnement(nbLignes, nbColonnes, agents, strategie);
+        env = new Environnement(nbLignes, nbColonnes, agents, strategie, vitesseAffichage);
     }
 
 }
