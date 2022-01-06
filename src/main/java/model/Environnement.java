@@ -9,13 +9,11 @@ import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Environnement {
-    private ArrayList<Agent> agents;
-    private Agent[][] map;
-    private int[][] finalMap;
+    private final ArrayList<Agent> agents;
+    private final Agent[][] map;
+    private final int[][] finalMap;
     private ArrayList<Thread> runningThreads;
-    private double multiplicateurVitesseAffichage = 1;
-    private boolean allInterrupted;
-    private ReentrantLock lock;
+    private final ReentrantLock lock;
 
 
     public static HashMap<Agent, LinkedList< Pair<int[], Direction>>> messages;
@@ -25,19 +23,18 @@ public class Environnement {
 
     public Environnement(int nbLignes, int nbColonnes, ArrayList<Agent> agents, int strategie, int vitesseAffichage) {
         Random rand = new Random();
-        this.messages = new HashMap<>();
-        this.currentLine = 0;
-        this.strategie = strategie;
+        messages = new HashMap<>();
+        currentLine = 0;
+        Environnement.strategie = strategie;
         this.agents = agents;
         this.map = new Agent[nbLignes][nbColonnes];
         this.finalMap = new int[nbLignes][nbColonnes];
-        this.allInterrupted = false;
         this.lock = new ReentrantLock();
+        double multiplicateurVitesseAffichage = 1;
         switch (vitesseAffichage){
-            case 0 -> this.multiplicateurVitesseAffichage = 2;
-            case 1 -> this.multiplicateurVitesseAffichage = 1;
-            case 2 -> this.multiplicateurVitesseAffichage = 0.33;
-            case 3 -> this.multiplicateurVitesseAffichage = 0.16;
+            case 0 -> multiplicateurVitesseAffichage = 2;
+            case 2 -> multiplicateurVitesseAffichage = 0.33;
+            case 3 -> multiplicateurVitesseAffichage = 0.16;
         }
 
         int x, y;
@@ -59,7 +56,7 @@ public class Environnement {
             int agentName = agent.getNom();
             agent.setFinalX((agentName - 1) / nbColonnes);
             agent.setFinalY((agentName - 1) % nbColonnes);
-            agent.setSleep((int)(6000/agents.size()*multiplicateurVitesseAffichage));
+            agent.setSleep((int)(6000/agents.size()* multiplicateurVitesseAffichage));
             agent.setMaxInterations(10000);
             finalMap[(agentName - 1) / nbColonnes][(agentName - 1) % nbColonnes] = agentName;
             messages.put(agent, new LinkedList<>());
@@ -119,15 +116,9 @@ public class Environnement {
         this.lock.lock();
         boolean isResolved = true;
         switch (strategie){
-            case 0 -> {
-                isResolved =  lineResolved(line);
-            }
-            case 1 -> {
-                isResolved = contourResolved(line);
-            }
-            case 2 -> {
-                isResolved = lineResolved(line, orientation);
-            }
+            case 0 -> isResolved =  lineResolved(line);
+            case 1 -> isResolved = contourResolved(line);
+            case 2 -> isResolved = lineResolved(line, orientation);
         }
         this.lock.unlock();
         return isResolved;
@@ -223,9 +214,9 @@ public class Environnement {
                         return false;
                     }
                 }
-                for (int x = line - 1; x >= 0; x--) {
+                for (int y = line - 1; y >= 0; y--) {
                     for (int i = 0; i < map.length; i++) {
-                        if (!testCase(i, x, true)) {
+                        if (!testCase(i, y, true)) {
                             return false;
                         }
                     }
@@ -253,9 +244,9 @@ public class Environnement {
                         return false;
                     }
                 }
-                for (int x = line; x > 0; x--) {
+                for (int y = line; y > 0; y--) {
                     for (int i = 0; i < map.length; i++) {
-                        if (!testCase(i, getNbColonnes()-x, true)) {
+                        if (!testCase(i, getNbColonnes()-y, true)) {
                             return false;
                         }
                     }
@@ -274,8 +265,7 @@ public class Environnement {
 
     public synchronized void move(Agent agent, Direction d) {
         int x; int y;
-        while (lock.isLocked()){
-        }
+        while (lock.isLocked());
         switch (d) {
             case TOP -> {
                 x = agent.getCurrentX() - 1;
@@ -431,34 +421,5 @@ public class Environnement {
 
     public int getNbColonnes(){
         return map[0].length;
-    }
-
-    public int getNbAgents(){
-        return agents.size();
-    }
-
-    public void checkAllInterupted() {
-        boolean interrupt = true;
-        for (Agent agent:agents){
-            if (!agent.isInterupt()){
-                interrupt = false;
-                break;
-            }
-        }
-        this.allInterrupted = interrupt;
-    }
-
-    public boolean isAllInterrupted() {
-        return allInterrupted;
-    }
-
-    public int getNbIterationsMax(){
-        int nbIter = 0;
-        for (Agent agent: getAgents()){
-            if (agent.getNbIterations() > nbIter){
-                nbIter = agent.getNbIterations();
-            }
-        }
-        return nbIter;
     }
 }

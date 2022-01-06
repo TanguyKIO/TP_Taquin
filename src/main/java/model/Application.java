@@ -8,7 +8,7 @@ public class Application {
         return env;
     }
 
-    private Environnement env;
+    private final Environnement env;
 
     public Application(int nbLignes, int nbColonnes, int nbAgents, int strategie, int vitesseAffichage){
         ArrayList<Agent> agents = new ArrayList<>();

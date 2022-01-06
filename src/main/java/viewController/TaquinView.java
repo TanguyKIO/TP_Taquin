@@ -22,8 +22,6 @@ import javafx.stage.Stage;
 import model.Agent;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
@@ -42,9 +40,9 @@ public class TaquinView extends Application implements Observer {
     private int vitesseAffichage;
 
     @Override
-    public void start(Stage primaryStage) throws IOException {
+    public void start(Stage primaryStage) {
         loadImages();
-        creerMenuParamètres();
+        creerMenuParametres();
     }
 
     private void loadImages(){
@@ -56,7 +54,7 @@ public class TaquinView extends Application implements Observer {
         }
     }
 
-    private void creerMenuParamètres(){
+    private void creerMenuParametres(){
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);
@@ -237,7 +235,7 @@ public class TaquinView extends Application implements Observer {
         m_parametres.setOnAction (actionEvent -> {
             app.getEnv().stopAgents();
             currentStage.close();
-            creerMenuParamètres();
+            creerMenuParametres();
         }); //lambda function
         m_parametres.setAccelerator (new KeyCodeCombination (KeyCode.P, KeyCombination.CONTROL_DOWN));
 

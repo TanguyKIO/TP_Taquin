@@ -101,7 +101,6 @@ public class Agent extends Observable implements Runnable {
                     Environnement.orientation = orientation;
                     if (nbIterations == maxInterations) {
                         this.setInterupt(true);
-                        this.env.checkAllInterupted();
                     }
                     setChanged();
                     notifyObservers();
@@ -495,10 +494,6 @@ public class Agent extends Observable implements Runnable {
         this.name = name;
     }
 
-    public boolean isInterupt() {
-        return interupt;
-    }
-
     public void setInterupt(boolean interupt) {
         this.interupt = interupt;
     }
@@ -536,10 +531,6 @@ public class Agent extends Observable implements Runnable {
             }
         }
         return null;
-    }
-
-    public int getNbIterations() {
-        return nbIterations;
     }
 
     public void setNbIterations(int nbIterations) {
