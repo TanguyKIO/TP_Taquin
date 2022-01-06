@@ -303,25 +303,20 @@ public class Agent extends Observable implements Runnable {
                 }
             }
         }
-        directions = removeDirections(directions);
+        removeDirections(directions);
         return directions;
     }
 
     private synchronized LinkedList<Direction> removeDirections(LinkedList<Direction> directions) {
         switch (strategie){
             case 0-> {
-                while(currentX < line && directions.remove(Direction.TOP)){
-                }
+                while(currentX < line && directions.remove(Direction.TOP));
             }
             case 1, 2-> {
-                while(currentX < line && directions.remove(Direction.TOP)){
-                }
-                while(currentX > env.getNbLignes() - 1 - line && directions.remove(Direction.BOTTOM)){
-                }
-                while(currentY < line && directions.remove(Direction.LEFT)){
-                }
-                while(currentY > env.getNbColonnes() - 1 - line && directions.remove(Direction.RIGHT)){
-                }
+                while(currentX < line && directions.remove(Direction.TOP))
+                while(currentX > env.getNbLignes() - 1 - line && directions.remove(Direction.BOTTOM));
+                while(currentY < line && directions.remove(Direction.LEFT));
+                while(currentY > env.getNbColonnes() - 1 - line && directions.remove(Direction.RIGHT));
             }
         }
         return directions;
@@ -336,7 +331,6 @@ public class Agent extends Observable implements Runnable {
                 directions.add(Direction.TOP);
                 directions.add(Direction.BOTTOM);
                 directions.add(Direction.RIGHT);
-                break;
             }
             case RIGHT -> {
                 directions.remove(Direction.LEFT);
@@ -344,7 +338,6 @@ public class Agent extends Observable implements Runnable {
                 directions.add(Direction.TOP);
                 directions.add(Direction.BOTTOM);
                 directions.add(Direction.LEFT);
-                break;
             }
             case TOP -> {
                 directions.remove(Direction.BOTTOM);
@@ -352,7 +345,6 @@ public class Agent extends Observable implements Runnable {
                 directions.add(Direction.LEFT);
                 directions.add(Direction.RIGHT);
                 directions.add(Direction.BOTTOM);
-                break;
             }
             case BOTTOM -> {
                 directions.remove(Direction.TOP);
@@ -360,23 +352,18 @@ public class Agent extends Observable implements Runnable {
                 directions.add(Direction.LEFT);
                 directions.add(Direction.RIGHT);
                 directions.add(Direction.TOP);
-                break;
             }
         }
-        directions = removeDirections(directions);
+        removeDirections(directions);
         Direction direction = findRepetition();
-        while (directions.remove(direction)){
-            continue;
-        }
+        while (directions.remove(direction));
         return directions;
     }
 
     public synchronized void moveBestDirection(){
         LinkedList<Direction> directions = bestPath();
         Direction direction = findRepetition();
-        while (directions.size() > 1 && directions.remove(direction)){
-            continue;
-        }
+        while (directions.size() > 1 && directions.remove(direction));
         /*Direction direction = findRepetition();
         if (direction != null){
             directions =  findFirstPossible(directions);
@@ -534,20 +521,18 @@ public class Agent extends Observable implements Runnable {
     public Direction findRepetition(){
         boolean repetition = true;
         if (memoire.size() == 6) {
-            for (int j = memoire.size()-3; j>= memoire.size()-5; j -= 2) {
-                if (Arrays.equals(new Direction[]{memoire.get(memoire.size() - 1), memoire.get(memoire.size() - 2)}, new Direction[]{memoire.get(j), memoire.get(j - 1)})) {
-                    continue;
-                }
-                else {
+            for (int j = 3; j>= 1; j -= 2) {
+                if (!Arrays.equals(new Direction[]{memoire.get(5), memoire.get(4)}, new Direction[]{memoire.get(j), memoire.get(j - 1)})) {
                     repetition = false;
                     break;
                 }
             }
             if (repetition){
-                return memoire.get(memoire.size() - 2);
+                return memoire.get(4);
             }
-            if (Arrays.equals(new Direction[]{memoire.get(memoire.size() - 1), memoire.get(memoire.size() - 2), memoire.get(memoire.size() - 3)}, new Direction[]{memoire.get(memoire.size() - 4), memoire.get(memoire.size() - 5), memoire.get(memoire.size() - 6)})) {
-                return memoire.get(memoire.size() - 3);
+            if (Arrays.equals(new Direction[]{memoire.get(5), memoire.get(4), memoire.get(3)},
+                    new Direction[]{memoire.get(2), memoire.get(1), memoire.get(0)})) {
+                return memoire.get(3);
             }
         }
         return null;
