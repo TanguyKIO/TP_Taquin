@@ -27,5 +27,4 @@ public class Application {
         }
         env = new Environnement(nbLignes, nbColonnes, agents, strategie, vitesseAffichage);
     }
-
 }

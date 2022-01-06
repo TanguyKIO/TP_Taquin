@@ -21,6 +21,8 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import model.Agent;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Observable;
@@ -41,7 +43,17 @@ public class TaquinView extends Application implements Observer {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+        loadImages();
         creerMenuParamètres();
+    }
+
+    private void loadImages(){
+        File folder = new File("res/images");
+        File[] listOfFiles = folder.listFiles();
+        tabImages = new HashMap<>();
+        for (File file:listOfFiles){
+            tabImages.put(file.getName(), new Image ("file:res/images/" + file.getName()));
+        }
     }
 
     private void creerMenuParamètres(){
@@ -76,7 +88,7 @@ public class TaquinView extends Application implements Observer {
         nbAgentsTextField.setText("20");
         grid.add(nbAgentsTextField, 1, 3);
 
-        Label lblStrategie = new Label("Stratégie (0: En ligne, 1: Depuis les extrémités, 2: En spirale,  3: Pas de contrainte) :");
+        Label lblStrategie = new Label("Stratégie (0: En ligne, 1: Contours d'abord, 2: En spirale, 3: Pas de contrainte) :");
         grid.add(lblStrategie, 0, 4);
 
         TextField strategieTextField = new TextField();
@@ -89,6 +101,11 @@ public class TaquinView extends Application implements Observer {
         TextField affichageTextField = new TextField();
         affichageTextField.setText("2");
         grid.add(affichageTextField, 1, 5);
+
+        Text text = new Text();
+        text.setText("Les stratégies contours d'abord et en spirale ne s'adaptent qu'à des grilles d'au moins 5 lignes et 5 colonnes");
+        text.setStyle("-fx-font-weight: bold");
+        grid.add(text, 0, 6);
 
         Button btn = new Button("Valider");
         HBox hbBtn = new HBox(10);
@@ -303,48 +320,48 @@ public class TaquinView extends Application implements Observer {
         int [][] finalMap = app.getEnv().getFinalMap();
         GridPane subGrid = (GridPane) grille.getChildren().get(3);
         ImageView image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid.add(image, 0, 0);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid.add(image, nbColonnes+1, 0);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid.add(image, 0, nbLignes+1);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid.add(image, nbColonnes+1, nbLignes+1);
 
         for (int i =1; i<nbLignes+1; i++){
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_vertical.jpg"));
+            image.setImage(tabImages.get("contour_vertical.jpg"));
             subGrid.add(image, 0, i);
             for (int j=1; j<nbColonnes+1; j++){
                 image = new ImageView();
                 if (map[i-1][j-1] != null) {
                     if (finalMap[i-1][j-1] != 0 && map[i-1][j-1].getNom() == finalMap[i-1][j-1]){
-                        image.setImage(new Image("file:res/images/" + map[i-1][j-1].getNom() + "_win.jpg"));
+                        image.setImage(tabImages.get(map[i-1][j-1].getNom() + "_win.jpg"));
                     }
                     else {
-                        image.setImage(new Image("file:res/images/" + map[i - 1][j - 1].getNom() + ".jpg"));
+                        image.setImage(tabImages.get(map[i - 1][j - 1].getNom() + ".jpg"));
                     }
                 }
                 else{
-                    image.setImage(new Image("file:res/images/blanc.jpg"));
+                    image.setImage(tabImages.get("blanc.jpg"));
                 }
                 subGrid.add(image, j, i);
             }
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_vertical.jpg"));
+            image.setImage(tabImages.get("contour_vertical.jpg"));
             subGrid.add(image, nbColonnes+1, i);
         }
 
         for (int j=1; j < nbColonnes+1; j++){
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
+            image.setImage(tabImages.get("contour_horizontal.jpg"));
             subGrid.add(image, j, 0);
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
+            image.setImage(tabImages.get("contour_horizontal.jpg"));
             subGrid.add(image, j, nbLignes+1);
         }
     }
@@ -361,14 +378,14 @@ public class TaquinView extends Application implements Observer {
                 image = (ImageView)subGrid.getChildren().get(iter);
                 if (map[i-1][j-1] != null) {
                     if (finalMap[i-1][j-1] != 0 && map[i-1][j-1].getNom() == finalMap[i-1][j-1]){
-                        image.setImage(new Image("file:res/images/" + map[i-1][j-1].getNom() + "_win.jpg"));
+                        image.setImage(tabImages.get(map[i-1][j-1].getNom() + "_win.jpg"));
                     }
                     else {
-                        image.setImage(new Image("file:res/images/" + map[i - 1][j - 1].getNom() + ".jpg"));
+                        image.setImage(tabImages.get(map[i - 1][j - 1].getNom() + ".jpg"));
                     }
                 }
                 else{
-                    image.setImage(new Image("file:res/images/blanc.jpg"));
+                    image.setImage(tabImages.get("blanc.jpg"));
                 }
                 iter += 1;
             }
@@ -379,45 +396,45 @@ public class TaquinView extends Application implements Observer {
     private void createSubSmallGridSolution(){
         int [][] finalMap = app.getEnv().getFinalMap();
         ImageView image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
 
         GridPane subGrid2 = (GridPane) grille.getChildren().get(4);
         subGrid2.add(image, 0, 0);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid2.add(image, nbColonnes+1, 0);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid2.add(image, 0, nbLignes+1);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid2.add(image, nbColonnes+1, nbLignes+1);
 
         for (int i =1; i<nbLignes+1; i++){
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_vertical.jpg"));
+            image.setImage(tabImages.get("contour_vertical.jpg"));
             subGrid2.add(image, 0, i);
             for (int j=1; j<nbColonnes+1; j++){
                 image = new ImageView();
                 if (finalMap[i-1][j-1] != 0) {
-                    image.setImage(new Image("file:res/images/" + finalMap[i-1][j-1] + ".jpg"));
+                    image.setImage(tabImages.get(finalMap[i-1][j-1] + ".jpg"));
                 }
                 else{
-                    image.setImage(new Image("file:res/images/blanc.jpg"));
+                    image.setImage(tabImages.get("blanc.jpg"));
                 }
                 subGrid2.add(image, j, i);
             }
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_vertical.jpg"));
+            image.setImage(tabImages.get("contour_vertical.jpg"));
             subGrid2.add(image, nbColonnes+1, i);
         }
 
         for (int j=1; j < nbColonnes+1; j++){
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
+            image.setImage(tabImages.get("contour_horizontal.jpg"));
             subGrid2.add(image, j, 0);
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
+            image.setImage(tabImages.get("contour_horizontal.jpg"));
             subGrid2.add(image, j, nbLignes+1);
         }
     }
@@ -432,10 +449,10 @@ public class TaquinView extends Application implements Observer {
             for (int j=1; j<nbColonnes+1; j++){
                 image = (ImageView)subGrid.getChildren().get(iter);
                 if (finalMap[i-1][j-1] != 0) {
-                    image.setImage(new Image("file:res/images/" + finalMap[i-1][j-1] + ".jpg"));
+                    image.setImage(tabImages.get(finalMap[i-1][j-1] + ".jpg"));
                 }
                 else{
-                    image.setImage(new Image("file:res/images/blanc.jpg"));
+                    image.setImage(tabImages.get("blanc.jpg"));
                 }
                 iter += 1;
             }
@@ -451,21 +468,21 @@ public class TaquinView extends Application implements Observer {
         int [][] finalMap = app.getEnv().getFinalMap();
         GridPane subGrid = (GridPane) grille.getChildren().get(3);
         ImageView image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid.add(image, 0, 0);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid.add(image, nbColonnes+1, 0);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid.add(image, 0, nbLignes+1);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid.add(image, nbColonnes+1, nbLignes+1);
 
         for (int i =1; i<nbLignes+1; i++){
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_vertical.jpg"));
+            image.setImage(tabImages.get("contour_vertical.jpg"));
             subGrid.add(image, 0, i);
             for (int j=1; j<nbColonnes+1; j++){
                 stack = new StackPane();
@@ -491,16 +508,16 @@ public class TaquinView extends Application implements Observer {
                 subGrid.add(stack, j, i);
             }
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_vertical.jpg"));
+            image.setImage(tabImages.get("contour_vertical.jpg"));
             subGrid.add(image, nbColonnes+1, i);
         }
 
         for (int j=1; j < nbColonnes+1; j++){
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
+            image.setImage(tabImages.get("contour_horizontal.jpg"));
             subGrid.add(image, j, 0);
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
+            image.setImage(tabImages.get("contour_horizontal.jpg"));
             subGrid.add(image, j, nbLignes+1);
         }
     }
@@ -547,23 +564,23 @@ public class TaquinView extends Application implements Observer {
         Text text;
         int [][] finalMap = app.getEnv().getFinalMap();
         ImageView image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
 
         GridPane subGrid2 = (GridPane) grille.getChildren().get(4);
         subGrid2.add(image, 0, 0);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid2.add(image, nbColonnes+1, 0);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid2.add(image, 0, nbLignes+1);
         image = new ImageView();
-        image.setImage(new Image("file:res/images/contour_carre.jpg"));
+        image.setImage(tabImages.get("contour_carre.jpg"));
         subGrid2.add(image, nbColonnes+1, nbLignes+1);
 
         for (int i =1; i<nbLignes+1; i++){
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_vertical.jpg"));
+            image.setImage(tabImages.get("contour_vertical.jpg"));
             subGrid2.add(image, 0, i);
             for (int j=1; j<nbColonnes+1; j++){
                 stack = new StackPane();
@@ -584,16 +601,16 @@ public class TaquinView extends Application implements Observer {
                 subGrid2.add(stack, j, i);
             }
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_vertical.jpg"));
+            image.setImage(tabImages.get("contour_vertical.jpg"));
             subGrid2.add(image, nbColonnes+1, i);
         }
 
         for (int j=1; j < nbColonnes+1; j++){
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
+            image.setImage(tabImages.get("contour_horizontal.jpg"));
             subGrid2.add(image, j, 0);
             image = new ImageView();
-            image.setImage(new Image("file:res/images/contour_horizontal.jpg"));
+            image.setImage(tabImages.get("contour_horizontal.jpg"));
             subGrid2.add(image, j, nbLignes+1);
         }
     }

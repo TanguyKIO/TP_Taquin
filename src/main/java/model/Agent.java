@@ -47,11 +47,10 @@ public class Agent extends Observable implements Runnable {
         while (true) {
             synchronized (this) {
                 if (!interupt) {
+                    nbIterations += 1;
                     line = currentLine;
                     orientation = Environnement.orientation;
-                    if (nbIterations % 30 == 0) {
-                        env.updateMap(this, this.getCurrentX(), this.getCurrentY());
-                    }
+
                     if (messages.get(this).size() > 5 || nbIterNoMove >= 5) {
                         if (!moveAvailableDirection()) {
                             pushAvailableDirection();
@@ -78,12 +77,16 @@ public class Agent extends Observable implements Runnable {
                                 }
                             }
                             case 1 -> {
-                                if ((line < env.getNbLignes() - 2 || line < env.getNbColonnes()) && env.partResolved(line, orientation)) {
+                                //if ((2*(line+1) <= env.getNbLignes() - 3 && 2*(line+1) <= env.getNbColonnes()-3) && env.partResolved(line, orientation)) {
+                                if (line < env.getNbLignes() -2 && line < env.getNbColonnes() -2 && env.partResolved(line, orientation)) {
                                     line++;
                                 }
                             }
                             case 2 -> {
-                                if ((line < env.getNbLignes() - 2 || line < env.getNbColonnes()) && env.partResolved(line, orientation)) {
+                                /*if (((2*(line+1) <= env.getNbLignes() - 3 && 2*(line+1) <= env.getNbColonnes()-3)
+                                        || (2*line+orientation+1 <= env.getNbLignes() - 3 && 2*line+orientation+1 <= env.getNbColonnes()-3))
+                                        && env.partResolved(line, orientation)) {*/
+                                if (line < env.getNbLignes() -2 && line < env.getNbColonnes() -2 && env.partResolved(line, orientation)){
                                     if (orientation == 3) {
                                         line++;
                                         orientation = 0;
@@ -98,6 +101,7 @@ public class Agent extends Observable implements Runnable {
                     Environnement.orientation = orientation;
                     if (nbIterations == maxInterations) {
                         this.setInterupt(true);
+                        this.env.checkAllInterupted();
                     }
                     setChanged();
                     notifyObservers();
@@ -110,7 +114,6 @@ public class Agent extends Observable implements Runnable {
                     } catch (InterruptedException ex) {
                         ex.printStackTrace();
                     }
-                    nbIterations += 1;
                 }
             }
         }
@@ -371,9 +374,13 @@ public class Agent extends Observable implements Runnable {
     public synchronized void moveBestDirection(){
         LinkedList<Direction> directions = bestPath();
         Direction direction = findRepetition();
+        while (directions.size() > 1 && directions.remove(direction)){
+            continue;
+        }
+        /*Direction direction = findRepetition();
         if (direction != null){
             directions =  findFirstPossible(directions);
-        }
+        }*/
         move(directions, false);
     }
 
@@ -546,6 +553,29 @@ public class Agent extends Observable implements Runnable {
         return null;
     }
 
+    public int getNbIterations() {
+        return nbIterations;
+    }
+
+    public void setNbIterations(int nbIterations) {
+        this.nbIterations = nbIterations;
+    }
+
+    public void setNbIterNoMove(int nbIterNoMove) {
+        this.nbIterNoMove = nbIterNoMove;
+    }
+
+    public void setLine(int line) {
+        this.line = line;
+    }
+
+    public void setOrientation(int orientation) {
+        this.orientation = orientation;
+    }
+
+    public void emptyMemory(){
+        this.memoire.clear();
+    }
 }
 
 
